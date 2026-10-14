@@ -1,0 +1,13 @@
+name: musakanye_stores
+publish_to: none
+
+environment:
+  sdk: ^3.13.5
+
+dev_dependencies:
+  melos: ^8.9.0
+
+workspace:
+  - apps/pos_tablet
+  - apps/owner
+  - packages/shared_core
