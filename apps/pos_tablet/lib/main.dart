@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:pos_tablet/di/app_dependencies.dart';
-import 'package:pos_tablet/theme/theme_notifier.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_core/theme/theme_notifier.dart';
 
 import 'app.dart';
 

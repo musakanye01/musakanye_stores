@@ -40,6 +40,7 @@
         "cupertino_icons",
         "flutter",
         "go_router",
+        "provider",
         "shared_core",
         "supabase_flutter"
       ],
@@ -257,6 +258,15 @@
       ]
     },
     {
+      "name": "provider",
+      "version": "6.1.5+1",
+      "dependencies": [
+        "collection",
+        "flutter",
+        "nested"
+      ]
+    },
+    {
       "name": "go_router",
       "version": "18.1.0",
       "dependencies": [
@@ -292,15 +302,6 @@
         "url_launcher_windows",
         "web",
         "win32"
-      ]
-    },
-    {
-      "name": "provider",
-      "version": "6.1.5+1",
-      "dependencies": [
-        "collection",
-        "flutter",
-        "nested"
       ]
     },
     {
@@ -966,6 +967,13 @@
       "dependencies": []
     },
     {
+      "name": "nested",
+      "version": "1.0.0",
+      "dependencies": [
+        "flutter"
+      ]
+    },
+    {
       "name": "material_ui",
       "version": "1.7.0",
       "dependencies": [
@@ -1064,13 +1072,6 @@
       "dependencies": [
         "meta",
         "web"
-      ]
-    },
-    {
-      "name": "nested",
-      "version": "1.0.0",
-      "dependencies": [
-        "flutter"
       ]
     },
     {
