@@ -49,7 +49,7 @@ class CartScreen extends StatelessWidget {
                   ? _buildEmptyCart(context)
                   : ListView.separated(
                       itemCount: cart.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      separatorBuilder: (_, _) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
                         final item = cart[index];
 

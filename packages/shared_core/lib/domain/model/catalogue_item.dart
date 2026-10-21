@@ -9,6 +9,8 @@ class CatalogueItem {
   final String? colour;
   final int priceCents;
   final int stockOnHand;
+  final String? description;
+  final String? categoryId;
 
   const CatalogueItem({
     required this.variantId,
@@ -20,6 +22,8 @@ class CatalogueItem {
     required this.colour,
     required this.priceCents,
     required this.stockOnHand,
+    this.description,
+    this.categoryId,
   });
 
   double get price => priceCents / 100;
@@ -44,6 +48,8 @@ class CatalogueItem {
       productId: product['id'] as String,
       productName: product['name'] as String,
       categoryName: category?['name'] as String?,
+      categoryId: product['category_id'] as String?,
+      description: product['description'] as String?,
       sku: json['sku'] as String?,
       size: json['size'] as String?,
       colour: json['colour'] as String?,
