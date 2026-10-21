@@ -1,0 +1,21 @@
+﻿# Dart and Flutter generated files
+.dart_tool/
+.packages
+.pub-cache/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# Local secrets and environment configuration
+.env
+.env.*
+!.env.example
+
+# Node and local tooling
+node_modules/
+
+# IDE and operating system
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
