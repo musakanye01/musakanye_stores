@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:pos_tablet/data/repository/auth_repo.dart';
 import 'package:pos_tablet/data/repository/product_repo.dart';
 import 'package:pos_tablet/data/repository/sale_repo.dart';
 import 'package:pos_tablet/data/repository/shift_repo.dart';
 import 'package:pos_tablet/data/repository/stock_repo.dart';
-import 'package:pos_tablet/data/source/auth_service.dart';
 import 'package:pos_tablet/data/source/product_service.dart';
 import 'package:pos_tablet/data/source/sale_service.dart';
 import 'package:pos_tablet/data/source/shift_service.dart';
 import 'package:pos_tablet/data/source/stock_receiving_service.dart';
+import 'package:shared_core/data/auth_repo.dart';
+import 'package:shared_core/data/auth_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AppDependencies {

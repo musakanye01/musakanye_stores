@@ -1,5 +1,4 @@
 import 'package:go_router/go_router.dart';
-import 'package:pos_tablet/ui/auth/auth_view_model.dart';
 import 'package:pos_tablet/ui/auth/login_screen.dart';
 import 'package:pos_tablet/ui/cash/cash_movements_screen.dart';
 import 'package:pos_tablet/ui/dashboard/dashboard_screen.dart';
@@ -12,6 +11,7 @@ import 'package:pos_tablet/ui/sales/sales_history_screen.dart';
 import 'package:pos_tablet/ui/shifts/shift_screen.dart';
 import 'package:pos_tablet/ui/shifts/start_shift_screen.dart';
 import 'package:pos_tablet/ui/stock/stock_receiving_screen.dart';
+import 'package:shared_core/ui/auth_view_model.dart';
 
 // ...your other imports unchanged
 

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:pos_tablet/ui/auth/auth_view_model.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_core/ui/auth_view_model.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});

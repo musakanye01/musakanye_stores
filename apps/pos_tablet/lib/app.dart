@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pos_tablet/di/app_dependencies.dart';
-import 'package:pos_tablet/ui/auth/auth_view_model.dart';
 import 'package:pos_tablet/ui/sales/viewmodel/catalogue_view_model.dart';
 import 'package:pos_tablet/ui/sales/viewmodel/checkout_view_model.dart';
 import 'package:pos_tablet/ui/sales/viewmodel/sales_history_view_model.dart';
 import 'package:pos_tablet/ui/shifts/shift_view_model.dart';
 import 'package:pos_tablet/ui/stock/stock_receiving_view_model.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_core/ui/auth_view_model.dart';
 
 import 'routing/app_router.dart';
 
