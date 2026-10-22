@@ -35,17 +35,37 @@ class SaleTile extends StatelessWidget {
       date: formatActivityDate(sale.createdAt),
       status: capitalise(sale.status),
       amount: formatCents(sale.totalCents),
-      onTap: () => showActivityDetails(
-        context,
-        title: 'Sale #$_shortId',
-        id: sale.id,
-        rows: [
-          ('Type', '$_paymentLabel sale'),
-          ('Date', formatActivityDate(sale.createdAt)),
-          ('Status', capitalise(sale.status)),
-          ('Amount', formatCents(sale.totalCents)),
-        ],
-      ),
+      onTap: () {
+        final itemRows = <DetailRow>[];
+
+        for (final item in sale.items) {
+          final variant = item.variantDescription?.trim();
+
+          final itemName = variant == null || variant.isEmpty
+              ? item.productName
+              : '${item.productName} — $variant';
+
+          itemRows.add((
+            itemName,
+            '${item.quantity} × ${formatCents(item.unitPriceCents)}'
+                ' = ${formatCents(item.lineTotalCents)}',
+          ));
+        }
+
+        showActivityDetails(
+          context,
+          title: 'Sale details',
+          id: sale.id,
+          rows: [
+            ('Type', normalisePaymentMethod(sale.paymentMethod)),
+            // Keep your existing Date row here.
+            ('Status', sale.status),
+            ('Amount', formatCents(sale.totalCents)),
+            if (itemRows.isNotEmpty) ('Items sold', ''),
+            ...itemRows,
+          ],
+        );
+      },
     );
   }
 }

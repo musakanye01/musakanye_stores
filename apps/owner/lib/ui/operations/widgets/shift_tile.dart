@@ -17,7 +17,9 @@ class ShiftTile extends StatelessWidget {
       subtitle: 'Opening float: ${formatCents(shift.openingFloatCents)}',
       date: formatActivityDate(shift.openedAt),
       status: capitalise(shift.status),
-      amount: formatCents(shift.openingFloatCents),
+      amount: shift.closingFloatCents == null
+          ? '-'
+          : formatCents(shift.closingFloatCents!),
       onTap: () => showActivityDetails(
         context,
         title: 'Cashier shift',
