@@ -124,7 +124,7 @@ class _StockReceivingScreenState extends State<StockReceivingScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     DropdownButtonFormField<String>(
-                      value: vm.selectedVariantId,
+                      initialValue: vm.selectedVariantId,
                       isExpanded: true,
                       decoration: const InputDecoration(
                         labelText: 'Product variant',
@@ -136,7 +136,7 @@ class _StockReceivingScreenState extends State<StockReceivingScreen> {
                         final sku = product.sku;
 
                         final details = [
-                          if (variant != null) variant,
+                          ?variant,
                           if (sku != null && sku.isNotEmpty) sku,
                         ].join(' · ');
 

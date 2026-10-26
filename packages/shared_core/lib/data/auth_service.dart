@@ -17,7 +17,7 @@ class AuthService {
         return Result.ok(AppUser(id: user.id, email: user.email));
       }
       return Result.error(Exception("Something unexpected happened"));
-    } on AuthException catch (e, s) {
+    } on AuthException catch (e) {
       final message = e.message.toLowerCase();
       if (message.contains('invalid login credentials')) {
         return Result.error(Exception('Email or password is incorrect.'));
@@ -30,7 +30,7 @@ class AuthService {
       return Result.error(
         Exception('Authentication failed. Check your details and try again.'),
       );
-    } catch (_, s) {
+    } catch (_) {
       return Result.error(
         Exception('Unable to sign in. Check your connection and try again.'),
       );
@@ -41,9 +41,9 @@ class AuthService {
     try {
       await _client.auth.signOut();
       return const Result.ok(null);
-    } on AuthException catch (_, s) {
+    } on AuthException catch (_) {
       return Result.error(Exception('Unable to sign out. Please try again.'));
-    } catch (_, _) {
+    } catch (_) {
       return Result.error(Exception('Unable to sign out. Please try again.'));
     }
   }
