@@ -1,13 +1,11 @@
-
 import 'package:flutter/material.dart';
 import 'package:pos_tablet/data/repository/stock_repo.dart';
-import 'package:shared_core/domain/catalogue_item.dart';
-import 'package:shared_core/domain/stock_receiving_item.dart';
+import 'package:shared_core/domain/model/catalogue_item.dart';
+import 'package:shared_core/domain/model/stock_receiving_item.dart';
+
 import 'package:shared_core/util/command.dart';
 import 'package:shared_core/util/result.dart';
 import 'package:uuid/uuid.dart';
-
-
 
 class StockReceivingViewModel extends ChangeNotifier {
   final StockReceivingRepository _repository;
@@ -39,8 +37,7 @@ class StockReceivingViewModel extends ChangeNotifier {
   String? _pendingPayloadKey;
 
   List<CatalogueItem> get products => List.unmodifiable(_products);
-  List<StockReceiptItem> get recentItems =>
-      List.unmodifiable(_recentItems);
+  List<StockReceiptItem> get recentItems => List.unmodifiable(_recentItems);
 
   String? get selectedVariantId => _selectedVariantId;
   String get quantityText => _quantityText;
@@ -164,9 +161,7 @@ class StockReceivingViewModel extends ChangeNotifier {
 
           // Refresh both data sources after a successful submission.
           final productsResult = await _repository.getProducts();
-          if (productsResult case Ok<List<CatalogueItem>>(
-            value: final items,
-          )) {
+          if (productsResult case Ok<List<CatalogueItem>>(value: final items)) {
             _products = items;
           }
 

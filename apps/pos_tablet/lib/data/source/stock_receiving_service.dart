@@ -1,5 +1,6 @@
-import 'package:shared_core/domain/catalogue_item.dart';
-import 'package:shared_core/domain/stock_receiving_item.dart';
+import 'package:shared_core/domain/model/catalogue_item.dart';
+import 'package:shared_core/domain/model/stock_receiving_item.dart';
+
 import 'package:shared_core/util/result.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 

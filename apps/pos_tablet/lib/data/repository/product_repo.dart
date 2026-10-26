@@ -1,5 +1,6 @@
 import 'package:pos_tablet/data/source/product_service.dart';
-import 'package:shared_core/domain/catalogue_item.dart';
+import 'package:shared_core/domain/model/catalogue_item.dart';
+
 import 'package:shared_core/util/result.dart';
 
 abstract class ProductRepository {

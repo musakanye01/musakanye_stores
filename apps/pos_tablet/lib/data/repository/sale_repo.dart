@@ -1,6 +1,7 @@
 import 'package:pos_tablet/data/source/sale_service.dart';
-import 'package:shared_core/domain/sale_history.dart';
-import 'package:shared_core/domain/sale_line.dart';
+import 'package:shared_core/domain/model/sale_history.dart';
+import 'package:shared_core/domain/model/sale_line.dart';
+
 import 'package:shared_core/util/result.dart';
 
 abstract class SaleRepository {

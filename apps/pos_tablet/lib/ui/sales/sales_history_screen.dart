@@ -5,7 +5,7 @@ import 'package:pos_tablet/ui/sales/viewmodel/sales_history_view_model.dart';
 import 'package:provider/provider.dart';
 
 import 'package:pos_tablet/ui/shared/tablet_scaffold.dart';
-import 'package:shared_core/domain/sale_history.dart';
+import 'package:shared_core/domain/model/sale_history.dart';
 
 class SalesHistoryScreen extends StatelessWidget {
   const SalesHistoryScreen({super.key});

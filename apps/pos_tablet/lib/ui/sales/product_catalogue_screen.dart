@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pos_tablet/ui/sales/viewmodel/catalogue_view_model.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_core/domain/catalogue_item.dart';
+import 'package:shared_core/domain/model/catalogue_item.dart';
 
 import '../shared/tablet_scaffold.dart';
 import 'cart_item.dart';

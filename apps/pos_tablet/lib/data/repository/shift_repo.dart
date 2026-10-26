@@ -1,6 +1,7 @@
 import 'package:pos_tablet/data/source/shift_service.dart';
-import 'package:shared_core/domain/shift.dart';
-import 'package:shared_core/domain/shift_sales_summary.dart';
+import 'package:shared_core/domain/model/shift.dart';
+import 'package:shared_core/domain/model/shift_sales_summary.dart';
+
 import 'package:shared_core/util/result.dart';
 import 'package:uuid/uuid.dart';
 

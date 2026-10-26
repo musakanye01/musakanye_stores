@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pos_tablet/ui/stock/stock_receiving_view_model.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_core/domain/stock_receiving_item.dart';
+import 'package:shared_core/domain/model/stock_receiving_item.dart';
 
 import '../shared/tablet_scaffold.dart';
 

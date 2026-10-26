@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:pos_tablet/data/repository/sale_repo.dart';
-import 'package:shared_core/domain/sale_history.dart';
+import 'package:shared_core/domain/model/sale_history.dart';
 
 class SalesHistoryViewModel extends ChangeNotifier {
   SalesHistoryViewModel(this._repository);

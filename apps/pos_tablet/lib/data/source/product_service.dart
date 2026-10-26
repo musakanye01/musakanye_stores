@@ -1,4 +1,4 @@
-import 'package:shared_core/domain/catalogue_item.dart';
+import 'package:shared_core/domain/model/catalogue_item.dart';
 import 'package:shared_core/util/result.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -19,9 +19,9 @@ class ProductService {
 
       final items = rows.map((r) => CatalogueItem.fromJson(r)).toList()
         ..sort((a, b) {
-          final byName = a.productName
-              .toLowerCase()
-              .compareTo(b.productName.toLowerCase());
+          final byName = a.productName.toLowerCase().compareTo(
+            b.productName.toLowerCase(),
+          );
           return byName != 0
               ? byName
               : (a.variantLabel ?? '').compareTo(b.variantLabel ?? '');

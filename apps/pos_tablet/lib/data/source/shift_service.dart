@@ -1,5 +1,5 @@
-import 'package:shared_core/domain/shift.dart';
-import 'package:shared_core/domain/shift_sales_summary.dart';
+import 'package:shared_core/domain/model/shift.dart';
+import 'package:shared_core/domain/model/shift_sales_summary.dart';
 import 'package:shared_core/util/result.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 

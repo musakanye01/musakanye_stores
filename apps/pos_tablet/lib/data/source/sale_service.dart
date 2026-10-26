@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:shared_core/domain/model/sale_history.dart';
+import 'package:shared_core/domain/model/sale_line.dart';
 import 'package:shared_core/util/result.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:shared_core/domain/sale_line.dart';
-import 'package:shared_core/domain/sale_history.dart';
 
 class SaleService {
   final SupabaseClient _client;

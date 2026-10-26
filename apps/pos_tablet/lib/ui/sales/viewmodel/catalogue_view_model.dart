@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:pos_tablet/data/repository/product_repo.dart';
 import 'package:pos_tablet/ui/sales/cart_item.dart';
-import 'package:shared_core/domain/catalogue_item.dart';
+import 'package:shared_core/domain/model/catalogue_item.dart';
+
 import 'package:shared_core/util/command.dart';
 import 'package:shared_core/util/result.dart';
 
