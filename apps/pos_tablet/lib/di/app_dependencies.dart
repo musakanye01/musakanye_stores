@@ -9,6 +9,7 @@ import 'package:pos_tablet/data/source/shift_service.dart';
 import 'package:pos_tablet/data/source/stock_receiving_service.dart';
 import 'package:shared_core/data/auth_repo.dart';
 import 'package:shared_core/data/auth_service.dart';
+import 'package:shared_core/data/local/app_database.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AppDependencies {
@@ -24,6 +25,7 @@ class AppDependencies {
   late final StockReceivingRepository _stockReceivingRepository;
 
   late final Supabase _supabase;
+  late final AppDatabase _db;
 
   AppDependencies._();
 
@@ -39,7 +41,11 @@ class AppDependencies {
       url: "https://xzbdtxfkjsvwzhnxahum.supabase.co",
       publishableKey: "sb_publishable_fJa1_rB7pwyQfkzv3wm87g_GO7h35vj",
     );
-    // Core Database & Local Feature Services
+
+    // Local Drift database — source of truth for offline-first operation.
+    _db = AppDatabase();
+
+    // Core services
     _authService = AuthService(_supabase.client);
     _authRepository = AuthRepositoryImpl(authService: _authService);
     _shiftService = ShiftService(_supabase.client);
@@ -61,4 +67,8 @@ class AppDependencies {
   SaleRepository get saleRepository => _saleRepository;
   StockReceivingRepository get stockReceivingRepository =>
       _stockReceivingRepository;
+
+  /// The local Drift database. Exposed so repositories and sync service
+  /// can access DAOs directly via [db.shiftsDao], [db.salesDao], etc.
+  AppDatabase get db => _db;
 }

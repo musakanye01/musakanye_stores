@@ -20,15 +20,21 @@
       "dependencies": [
         "connectivity_plus",
         "cupertino_icons",
+        "drift",
+        "drift_flutter",
         "flutter",
         "go_router",
+        "path_provider",
         "provider",
         "share_plus",
         "shared_core",
+        "sqlite3_flutter_libs",
         "supabase_flutter",
         "uuid"
       ],
       "devDependencies": [
+        "build_runner",
+        "drift_dev",
         "flutter_lints",
         "flutter_test"
       ]
@@ -283,6 +289,20 @@
       "name": "cupertino_icons",
       "version": "1.0.9",
       "dependencies": []
+    },
+    {
+      "name": "drift_flutter",
+      "version": "0.3.1",
+      "dependencies": [
+        "drift",
+        "flutter",
+        "meta",
+        "path",
+        "path_provider",
+        "sqlcipher_flutter_libs",
+        "sqlite3",
+        "sqlite3_flutter_libs"
+      ]
     },
     {
       "name": "share_plus",
@@ -1002,6 +1022,11 @@
         "flutter_localizations",
         "intl"
       ]
+    },
+    {
+      "name": "sqlcipher_flutter_libs",
+      "version": "0.7.0+eol",
+      "dependencies": []
     },
     {
       "name": "win32",
