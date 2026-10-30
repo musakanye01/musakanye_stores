@@ -6,6 +6,7 @@ part of 'sales_dao.dart';
 mixin _$SalesDaoMixin on DatabaseAccessor<AppDatabase> {
   $SalesTableTable get salesTable => attachedDatabase.salesTable;
   $SaleLinesTableTable get saleLinesTable => attachedDatabase.saleLinesTable;
+  $CatalogueTableTable get catalogueTable => attachedDatabase.catalogueTable;
   SalesDaoManager get managers => SalesDaoManager(this);
 }
 
@@ -18,5 +19,10 @@ class SalesDaoManager {
       $$SaleLinesTableTableTableManager(
         _db.attachedDatabase,
         _db.saleLinesTable,
+      );
+  $$CatalogueTableTableTableManager get catalogueTable =>
+      $$CatalogueTableTableTableManager(
+        _db.attachedDatabase,
+        _db.catalogueTable,
       );
 }

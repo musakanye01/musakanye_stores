@@ -96,8 +96,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       CheckoutInput(
         shiftId: shift.id,
         items: _items,
-        // method: _method,
-        tenderedCents: _receivedCents!,
+        tenderedCents: _isCash ? _receivedCents! : _totalCents,
+        paymentMethod: _method,
       ),
     );
   }
@@ -138,8 +138,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       final change = _isCash ? tendered - sale.totalCents : 0;
 
       final catalogue = context.read<CatalogueViewModel>();
+
+      catalogue.applyLocalSale(items);
       catalogue.clearCart();
-      catalogue.loadCatalogue.execute();
 
       context.goNamed(
         'receipt',

@@ -10,23 +10,24 @@ class CheckoutInput {
   final String shiftId;
   final List<CartItem> items;
   final int tenderedCents;
+  final String paymentMethod;
 
   const CheckoutInput({
     required this.shiftId,
     required this.items,
     required this.tenderedCents,
+    required this.paymentMethod,
   });
 }
 
 class CheckoutViewModel extends ChangeNotifier {
   final SaleRepository _saleRepository;
+
   static const _uuid = Uuid();
 
   SaleResult? _lastSale;
   SaleResult? get lastSale => _lastSale;
 
-  // Identity of the in-flight sale. Reused for retries of the exact same
-  // payload, regenerated when the payload changes.
   String? _signature;
   String? _saleId;
   String? _idempotencyKey;
@@ -42,16 +43,23 @@ class CheckoutViewModel extends ChangeNotifier {
       return Result.error(Exception('There are no items in this sale.'));
     }
 
-    // Stable order so the server-side request hash is identical on retry.
     final lines =
         input.items
-            .map((i) => SaleLine(variantId: i.productId, quantity: i.quantity))
+            .map(
+              (item) => SaleLine(
+                variantId: item.productId,
+                quantity: item.quantity,
+                unitPriceCents: (item.unitPrice * 100).round(),
+              ),
+            )
             .toList()
           ..sort((a, b) => a.variantId.compareTo(b.variantId));
 
     final signature =
-        '${input.shiftId}|${input.tenderedCents}|'
-        '${lines.map((l) => '${l.variantId}:${l.quantity}').join(',')}';
+        '${input.shiftId}|'
+        '${input.paymentMethod}|'
+        '${input.tenderedCents}|'
+        '${lines.map((l) => '${l.variantId}:${l.quantity}:${l.unitPriceCents}').join(',')}';
 
     if (_signature != signature) {
       _signature = signature;
@@ -63,6 +71,7 @@ class CheckoutViewModel extends ChangeNotifier {
       saleId: _saleId!,
       idempotencyKey: _idempotencyKey!,
       shiftId: input.shiftId,
+      paymentMethod: input.paymentMethod,
       items: lines,
       tenderedCents: input.tenderedCents,
     );
@@ -70,10 +79,13 @@ class CheckoutViewModel extends ChangeNotifier {
     switch (result) {
       case Ok<SaleResult>(value: final sale):
         _lastSale = sale;
+
         _signature = null;
         _saleId = null;
         _idempotencyKey = null;
+
         return const Result.ok(null);
+
       case Error<SaleResult>(error: final err):
         return Result.error(err);
     }

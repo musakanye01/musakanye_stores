@@ -1,12 +1,18 @@
 class SaleLine {
   final String variantId;
   final int quantity;
-  const SaleLine({required this.variantId, required this.quantity});
+  final int? unitPriceCents;
+
+  const SaleLine({
+    required this.variantId,
+    required this.quantity,
+    this.unitPriceCents,
+  });
 
   Map<String, dynamic> toJson() => {
-        'variant_id': variantId,
-        'quantity': quantity,
-      };
+    'variant_id': variantId,
+    'quantity': quantity,
+  };
 }
 
 class SaleResult {
@@ -21,8 +27,8 @@ class SaleResult {
   });
 
   factory SaleResult.fromJson(Map<String, dynamic> json) => SaleResult(
-        saleId: json['sale_id'] as String,
-        totalCents: (json['total_cents'] as num).toInt(),
-        duplicate: json['duplicate'] as bool? ?? false,
-      );
+    saleId: json['sale_id'] as String,
+    totalCents: (json['total_cents'] as num).toInt(),
+    duplicate: json['duplicate'] as bool? ?? false,
+  );
 }

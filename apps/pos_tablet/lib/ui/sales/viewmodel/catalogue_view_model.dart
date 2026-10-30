@@ -51,6 +51,42 @@ class CatalogueViewModel extends ChangeNotifier {
     }
   }
 
+  void applyLocalSale(List<CartItem> soldItems) {
+    final quantitiesByVariant = <String, int>{};
+
+    for (final item in soldItems) {
+      quantitiesByVariant.update(
+        item.productId,
+        (quantity) => quantity + item.quantity,
+        ifAbsent: () => item.quantity,
+      );
+    }
+
+    _items = _items.map((item) {
+      final soldQuantity = quantitiesByVariant[item.variantId] ?? 0;
+
+      if (soldQuantity == 0) return item;
+
+      return CatalogueItem(
+        variantId: item.variantId,
+        productId: item.productId,
+        productName: item.productName,
+        categoryName: item.categoryName,
+        sku: item.sku,
+        size: item.size,
+        colour: item.colour,
+        priceCents: item.priceCents,
+        stockOnHand: (item.stockOnHand - soldQuantity)
+            .clamp(0, item.stockOnHand)
+            .toInt(),
+        description: item.description,
+        categoryId: item.categoryId,
+      );
+    }).toList();
+
+    notifyListeners();
+  }
+
   // ---- Cart ----
   List<CartItem> get cart => List.unmodifiable(_cart);
 

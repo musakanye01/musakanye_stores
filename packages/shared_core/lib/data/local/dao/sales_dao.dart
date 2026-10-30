@@ -1,27 +1,83 @@
 import 'package:drift/drift.dart';
 import 'package:shared_core/data/local/app_database.dart';
+import 'package:shared_core/data/local/tables/catalogue_table.dart';
 import 'package:shared_core/data/local/tables/sale_lines_table.dart';
 import 'package:shared_core/data/local/tables/sales_table.dart';
 
 part 'sales_dao.g.dart';
 
-@DriftAccessor(tables: [SalesTable, SaleLinesTable])
+@DriftAccessor(tables: [SalesTable, SaleLinesTable, CatalogueTable])
 class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
   SalesDao(super.db);
 
-  /// Inserts a sale header and its line items in a single transaction.
-  Future<void> insertSaleWithLines({
+  /// Saves a sale, its lines and stock deductions atomically.
+  Future<void> createSaleLocally({
     required SalesTableCompanion sale,
     required List<SaleLinesTableCompanion> lines,
-  }) =>
-      transaction(() async {
-        await into(salesTable).insertOnConflictUpdate(sale);
-        for (final line in lines) {
-          await into(saleLinesTable).insertOnConflictUpdate(line);
-        }
-      });
+  }) => transaction(() async {
+    final saleId = sale.id.value;
 
-  /// Returns sale + lines that still need to be pushed to Supabase.
+    // Prevent duplicate stock deductions on retries.
+    final existingSale = await (select(
+      salesTable,
+    )..where((t) => t.id.equals(saleId))).getSingleOrNull();
+
+    if (existingSale != null) return;
+
+    // Validate all stock before writing anything.
+    final stockRows = <String, CatalogueTableData>{};
+
+    for (final line in lines) {
+      final variantId = line.variantId.value;
+      final quantity = line.quantity.value;
+
+      if (quantity <= 0) {
+        throw StateError('Sale quantities must be greater than zero.');
+      }
+
+      final stockRow = await (select(
+        catalogueTable,
+      )..where((t) => t.variantId.equals(variantId))).getSingleOrNull();
+
+      if (stockRow == null) {
+        throw StateError(
+          'An item is missing from the local catalogue. '
+          'Refresh the catalogue before selling.',
+        );
+      }
+
+      if (stockRow.stockOnHand < quantity) {
+        throw StateError(
+          'Insufficient cached stock for '
+          '${stockRow.productName}.',
+        );
+      }
+
+      stockRows[variantId] = stockRow;
+    }
+
+    // Save the sale header.
+    await into(salesTable).insert(sale);
+
+    // Save lines and deduct stock.
+    for (final line in lines) {
+      await into(saleLinesTable).insert(line);
+
+      final variantId = line.variantId.value;
+      final quantity = line.quantity.value;
+      final stockRow = stockRows[variantId]!;
+
+      await (update(
+        catalogueTable,
+      )..where((t) => t.variantId.equals(variantId))).write(
+        CatalogueTableCompanion(
+          stockOnHand: Value(stockRow.stockOnHand - quantity),
+        ),
+      );
+    }
+  });
+
+  /// Returns sales that still need to be pushed to Supabase.
   Future<List<SalesTableData>> getUnsynced() =>
       (select(salesTable)..where((t) => t.synced.equals(false))).get();
 
@@ -29,8 +85,7 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
   Future<List<SaleLinesTableData>> getLinesForSale(String saleId) =>
       (select(saleLinesTable)..where((t) => t.saleId.equals(saleId))).get();
 
-  /// Marks a sale (and its lines are immutable so no separate mark needed)
-  /// as successfully synced.
+  /// Marks a sale as successfully synced.
   Future<void> markSynced(String saleId) =>
       (update(salesTable)..where((t) => t.id.equals(saleId))).write(
         const SalesTableCompanion(
@@ -49,7 +104,7 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
         ),
       );
 
-  /// Returns the [limit] most recent sales, ordered newest-first.
+  /// Returns recent sales, newest first.
   Future<List<SalesTableData>> getRecent({int limit = 50, int offset = 0}) =>
       (select(salesTable)
             ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])

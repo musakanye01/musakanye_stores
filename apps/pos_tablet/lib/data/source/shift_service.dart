@@ -7,6 +7,9 @@ class ShiftService {
   final SupabaseClient _client;
   ShiftService(this._client);
 
+  /// Authenticated user used to associate locally stored shifts.
+  String? get currentUserId => _client.auth.currentUser?.id;
+
   Future<Result<Shift>> startShift({
     required int openingFloatCents,
     required String idempotencyKey,
@@ -115,7 +118,7 @@ class ShiftService {
   }
 
   Future<Result<Shift?>> getOpenShift() async {
-    final cashierId = _client.auth.currentUser?.id;
+    final cashierId = currentUserId;
     if (cashierId == null) return Result.ok(null);
 
     try {
