@@ -12,14 +12,13 @@ class CatalogueDao extends DatabaseAccessor<AppDatabase>
 
   /// Returns the full cached catalogue, sorted by product name then variant.
   Future<List<CatalogueTableData>> getAll() =>
-      (select(catalogueTable)
-            ..orderBy([
-              (t) => OrderingTerm.asc(t.productName),
-              (t) => OrderingTerm.asc(t.variantId),
-            ]))
+      (select(catalogueTable)..orderBy([
+            (t) => OrderingTerm.asc(t.productName),
+            (t) => OrderingTerm.asc(t.variantId),
+          ]))
           .get();
 
-  /// Replaces the entire catalogue cache in a single transaction.
+  /// Upserts rows without removing other cached catalogue entries.
   Future<void> upsertAll(List<CatalogueTableCompanion> rows) =>
       transaction(() async {
         for (final row in rows) {
@@ -27,15 +26,24 @@ class CatalogueDao extends DatabaseAccessor<AppDatabase>
         }
       });
 
+  /// Replaces the cache after a complete successful catalogue fetch.
+  /// This also removes products/variants that are no longer active remotely.
+  Future<void> replaceAll(List<CatalogueTableCompanion> rows) =>
+      transaction(() async {
+        await delete(catalogueTable).go();
+        for (final row in rows) {
+          await into(catalogueTable).insertOnConflictUpdate(row);
+        }
+      });
+
   /// Decrements stock for [variantId] by [quantity] (optimistic local update).
   Future<void> decrementStock(String variantId, int quantity) async {
-    final row = await (select(catalogueTable)
-          ..where((t) => t.variantId.equals(variantId)))
-        .getSingleOrNull();
+    final row = await (select(
+      catalogueTable,
+    )..where((t) => t.variantId.equals(variantId))).getSingleOrNull();
     if (row == null) return;
     final newStock = (row.stockOnHand - quantity).clamp(0, row.stockOnHand);
-    await (update(catalogueTable)
-          ..where((t) => t.variantId.equals(variantId)))
+    await (update(catalogueTable)..where((t) => t.variantId.equals(variantId)))
         .write(CatalogueTableCompanion(stockOnHand: Value(newStock)));
   }
 

@@ -51,7 +51,10 @@ class AppDependencies {
     _shiftService = ShiftService(_supabase.client);
     _shiftRepository = ShiftRepositoryImpl(_shiftService);
     _productService = ProductService(_supabase.client);
-    _productRepository = ProductRepositoryImpl(_productService);
+    _productRepository = ProductRepositoryImpl(
+      _productService,
+      _db.catalogueDao,
+    );
     _saleService = SaleService(_supabase.client);
     _saleRepository = SaleRepositoryImpl(_saleService);
     _stockReceivingService = StockReceivingService(_supabase.client);
