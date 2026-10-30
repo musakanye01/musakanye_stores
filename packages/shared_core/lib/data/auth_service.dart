@@ -37,6 +37,22 @@ class AuthService {
     }
   }
 
+  Future<Result<AppUser?>> restoreSession() async {
+    try {
+      final session = _client.auth.currentSession;
+
+      if (session == null) {
+        return const Result.ok(null);
+      }
+
+      final user = session.user;
+
+      return Result.ok(AppUser(id: user.id, email: user.email));
+    } catch (_) {
+      return Result.error(Exception('Unable to restore the previous session.'));
+    }
+  }
+
   Future<Result<void>> logout() async {
     try {
       await _client.auth.signOut();

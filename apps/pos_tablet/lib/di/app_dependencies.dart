@@ -11,6 +11,7 @@ import 'package:shared_core/data/auth_repo.dart';
 import 'package:shared_core/data/auth_service.dart';
 import 'package:shared_core/data/local/app_database.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:pos_tablet/data/source/sale_sync_service.dart';
 
 class AppDependencies {
   late final AuthService _authService;
@@ -23,6 +24,7 @@ class AppDependencies {
   late final SaleRepository _saleRepository;
   late final StockReceivingService _stockReceivingService;
   late final StockReceivingRepository _stockReceivingRepository;
+  late final SaleSyncService _saleSyncService;
 
   late final Supabase _supabase;
   late final AppDatabase _db;
@@ -37,11 +39,7 @@ class AppDependencies {
   }
 
   Future<void> _initializeDependencies() async {
-    _supabase = await Supabase.initialize(
-      url: "https://xzbdtxfkjsvwzhnxahum.supabase.co",
-      publishableKey: "sb_publishable_fJa1_rB7pwyQfkzv3wm87g_GO7h35vj",
-    );
-
+    _supabase = _supabase = Supabase.instance;
     // Local Drift database — source of truth for offline-first operation.
     _db = AppDatabase();
 
@@ -56,7 +54,19 @@ class AppDependencies {
       _db.catalogueDao,
     );
     _saleService = SaleService(_supabase.client);
-    _saleRepository = SaleRepositoryImpl(_saleService, _db.salesDao);
+    _saleSyncService = SaleSyncService(
+      salesDao: _db.salesDao,
+      saleService: _saleService,
+      supabaseClient: _supabase.client,
+    );
+    _saleRepository = SaleRepositoryImpl(
+      _saleService,
+      _db.salesDao,
+      _saleSyncService,
+    );
+
+    _saleSyncService.start();
+
     _stockReceivingService = StockReceivingService(_supabase.client);
     _stockReceivingRepository = StockReceivingRepositoryImpl(
       _stockReceivingService,

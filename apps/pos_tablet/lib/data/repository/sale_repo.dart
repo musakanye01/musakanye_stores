@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:pos_tablet/data/source/sale_service.dart';
 import 'package:shared_core/data/local/app_database.dart';
 import 'package:shared_core/data/local/dao/sales_dao.dart';
 import 'package:shared_core/domain/model/sale_history.dart';
 import 'package:shared_core/domain/model/sale_line.dart';
 import 'package:shared_core/util/result.dart';
+import 'package:pos_tablet/data/source/sale_sync_service.dart';
 import 'package:uuid/uuid.dart';
 
 abstract class SaleRepository {
@@ -17,10 +20,7 @@ abstract class SaleRepository {
     String? deviceId,
   });
 
-  Future<List<SaleHistory>> getSalesHistory({
-    int offset = 0,
-    int limit = 50,
-  });
+  Future<List<SaleHistory>> getSalesHistory({int offset = 0, int limit = 50});
 
   Future<Map<String, dynamic>> getSaleReceipt(String saleId);
 }
@@ -28,13 +28,11 @@ abstract class SaleRepository {
 class SaleRepositoryImpl implements SaleRepository {
   final SaleService _saleService;
   final SalesDao _salesDao;
+  final SaleSyncService _saleSyncService;
 
   static const _uuid = Uuid();
 
-  SaleRepositoryImpl(
-    this._saleService,
-    this._salesDao,
-  );
+  SaleRepositoryImpl(this._saleService, this._salesDao, this._saleSyncService);
 
   @override
   Future<Result<SaleResult>> createCashSale({
@@ -48,16 +46,11 @@ class SaleRepositoryImpl implements SaleRepository {
   }) async {
     try {
       if (items.isEmpty) {
-        return Result.error(
-          Exception('There are no items in this sale.'),
-        );
+        return Result.error(Exception('There are no items in this sale.'));
       }
 
-      if (paymentMethod != 'cash' &&
-          paymentMethod != 'ecocash_usd') {
-        return Result.error(
-          Exception('Unsupported payment method.'),
-        );
+      if (paymentMethod != 'cash' && paymentMethod != 'ecocash_usd') {
+        return Result.error(Exception('Unsupported payment method.'));
       }
 
       final localLines = <SaleLinesTableCompanion>[];
@@ -68,17 +61,13 @@ class SaleRepositoryImpl implements SaleRepository {
 
         if (unitPriceCents == null || unitPriceCents < 0) {
           return Result.error(
-            Exception(
-              'A sale item is missing its cached price.',
-            ),
+            Exception('A sale item is missing its cached price.'),
           );
         }
 
         if (item.quantity <= 0) {
           return Result.error(
-            Exception(
-              'Sale quantities must be greater than zero.',
-            ),
+            Exception('Sale quantities must be greater than zero.'),
           );
         }
 
@@ -97,9 +86,7 @@ class SaleRepositoryImpl implements SaleRepository {
 
       if (tenderedCents < totalCents) {
         return Result.error(
-          Exception(
-            'The amount received does not cover the sale total.',
-          ),
+          Exception('The amount received does not cover the sale total.'),
         );
       }
 
@@ -116,37 +103,25 @@ class SaleRepositoryImpl implements SaleRepository {
         lines: localLines,
       );
 
+      unawaited(_saleSyncService.syncPendingSales());
+
       return Result.ok(
-        SaleResult(
-          saleId: saleId,
-          totalCents: totalCents,
-          duplicate: false,
-        ),
+        SaleResult(saleId: saleId, totalCents: totalCents, duplicate: false),
       );
     } catch (e) {
       return Result.error(
-        Exception(
-          e.toString().replaceFirst('Exception: ', ''),
-        ),
+        Exception(e.toString().replaceFirst('Exception: ', '')),
       );
     }
   }
 
   @override
-  Future<List<SaleHistory>> getSalesHistory({
-    int offset = 0,
-    int limit = 50,
-  }) {
-    return _saleService.getSalesHistory(
-      offset: offset,
-      limit: limit,
-    );
+  Future<List<SaleHistory>> getSalesHistory({int offset = 0, int limit = 50}) {
+    return _saleService.getSalesHistory(offset: offset, limit: limit);
   }
 
   @override
-  Future<Map<String, dynamic>> getSaleReceipt(
-    String saleId,
-  ) {
+  Future<Map<String, dynamic>> getSaleReceipt(String saleId) {
     return _saleService.getSaleReceipt(saleId);
   }
 }

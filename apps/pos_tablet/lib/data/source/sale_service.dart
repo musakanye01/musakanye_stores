@@ -94,6 +94,73 @@ class SaleService {
     };
   }
 
+  Future<Result<SaleResult>> createEcoCashSale({
+    required String saleId,
+    required String idempotencyKey,
+    required String shiftId,
+    required List<SaleLine> items,
+    String? deviceId,
+  }) async {
+    try {
+      final response = await _client.rpc(
+        'create_ecocash_sale',
+        params: {
+          'p_sale_id': saleId,
+          'p_idempotency_key': idempotencyKey,
+          'p_shift_id': shiftId,
+          'p_device_id': deviceId,
+          'p_items': items.map((item) => item.toJson()).toList(),
+        },
+      );
+
+      return Result.ok(SaleResult.fromJson(response as Map<String, dynamic>));
+    } on PostgrestException catch (e) {
+      return Result.error(Exception(_friendly(e.message)));
+    } catch (_) {
+      return Result.error(
+        Exception(
+          'Could not complete the EcoCash sale. '
+          'Check your connection and try again.',
+        ),
+      );
+    }
+  }
+
+  Future<Result<SaleResult>> syncOfflineSale({
+    required String saleId,
+    required String idempotencyKey,
+    required String shiftId,
+    required String paymentMethod,
+    required DateTime createdAt,
+    required int totalCents,
+    required int? tenderedCents,
+    required List<Map<String, dynamic>> items,
+    String? deviceId,
+  }) async {
+    try {
+      final response = await _client.rpc(
+        'sync_offline_sale',
+        params: {
+          'p_sale_id': saleId,
+          'p_idempotency_key': idempotencyKey,
+          'p_shift_id': shiftId,
+          'p_device_id': deviceId,
+          'p_payment_method': paymentMethod,
+          'p_created_at': createdAt.toUtc().toIso8601String(),
+          'p_total_cents': totalCents,
+          'p_tendered_cents': tenderedCents,
+          'p_items': items,
+        },
+      );
+
+      return Result.ok(SaleResult.fromJson(response as Map<String, dynamic>));
+    } on PostgrestException catch (e) {
+      return Result.error(Exception(_friendly(e.message)));
+    } catch (_) {
+      return Result.error(Exception('Could not synchronize the offline sale.'));
+    }
+  }
+
   Future<List<SaleHistory>> getSalesHistory({
     int offset = 0,
     int limit = 50,

@@ -79,7 +79,10 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
 
   /// Returns sales that still need to be pushed to Supabase.
   Future<List<SalesTableData>> getUnsynced() =>
-      (select(salesTable)..where((t) => t.synced.equals(false))).get();
+      (select(salesTable)
+            ..where((t) => t.synced.equals(false))
+            ..orderBy([(t) => OrderingTerm.asc(t.createdAt)]))
+          .get();
 
   /// Returns all lines for a given sale.
   Future<List<SaleLinesTableData>> getLinesForSale(String saleId) =>

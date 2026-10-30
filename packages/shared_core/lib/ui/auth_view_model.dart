@@ -4,6 +4,8 @@ import 'package:shared_core/domain/model/app_user.dart';
 import 'package:shared_core/util/command.dart';
 import 'package:shared_core/util/result.dart';
 
+import 'dart:async';
+
 enum AuthStatus { uninitialized, unauthenticated, authenticated }
 
 class LoginCredentials {
@@ -27,7 +29,24 @@ class AuthViewModel extends ChangeNotifier {
   AuthViewModel(this._authRepository) {
     login = Command1(_handleLogin);
     logout = Command0(_handleLogout);
-    // _restoreSession();
+    unawaited(_restoreSession());
+  }
+
+  Future<void> _restoreSession() async {
+    try {
+      final result = await _authRepository.restoreSession();
+
+      switch (result) {
+        case Ok<AppUser?>(value: final user):
+          _setUser(user);
+
+        case Error<AppUser?>():
+          _setUser(null);
+      }
+    } catch (e) {
+      debugPrint('Session restoration failed: $e');
+      _setUser(null);
+    }
   }
 
   void _setUser(AppUser? user) {
