@@ -17,11 +17,11 @@ class TabletScaffold extends StatelessWidget {
       icon: Icons.point_of_sale_outlined,
       route: '/sales',
     ),
-    _NavigationItem(
-      label: 'Stock Receiving',
-      icon: Icons.inventory_2_outlined,
-      route: '/stock-receiving',
-    ),
+    // _NavigationItem(
+    //   label: 'Stock Receiving',
+    //   icon: Icons.inventory_2_outlined,
+    //   route: '/stock-receiving',
+    // ),
     _NavigationItem(
       label: 'Sale History',
       icon: Icons.payments_outlined,
