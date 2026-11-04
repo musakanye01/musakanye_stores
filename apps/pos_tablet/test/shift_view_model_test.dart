@@ -1,51 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pos_tablet/data/repository/shift_repo.dart';
 import 'package:pos_tablet/ui/shifts/shift_view_model.dart';
-import 'package:shared_core/domain/model/shift.dart';
 import 'package:shared_core/util/result.dart';
 
-class FakeShiftRepository implements ShiftRepository {
-  Result<Shift?> openShiftResult = const Result.ok(null);
-  Result<Shift>? startResult;
-  Result<void> closeResult = const Result.ok(null);
-  Completer<Result<void>>? closeGate; // lets a test hold the close in flight
-
-  int getOpenShiftCalls = 0;
-  int closeCalls = 0;
-
-  @override
-  Future<Result<Shift?>> getOpenShift() async {
-    getOpenShiftCalls++;
-    return openShiftResult;
-  }
-
-  @override
-  Future<Result<Shift>> startShift({
-    required int openingFloatCents,
-    String? deviceId,
-  }) async => startResult ?? Result.ok(_shift('new', openingFloatCents));
-
-  @override
-  Future<Result<void>> closeShift({
-    required String shiftId,
-    required int countedCashCents,
-    String? closingNote,
-  }) {
-    closeCalls++;
-    return closeGate?.future ?? Future.value(closeResult);
-  }
-}
-
-Shift _shift(String id, [int float = 1000]) => Shift(
-  id: id,
-  cashierId: 'cashier-1',
-  openingFloatCents: float,
-  deviceId: null,
-  status: 'open',
-  openedAt: DateTime.utc(2026, 11, 4, 8),
-);
+import 'lib/data/fake_shift_repo.dart';
+import 'lib/model/fake_shift.dart';
 
 void main() {
   late FakeShiftRepository repo;
@@ -62,7 +22,7 @@ void main() {
     });
 
     test('open shift in the repository gives open', () async {
-      repo.openShiftResult = Result.ok(_shift('s1'));
+      repo.openShiftResult = Result.ok(fakeShift('s1'));
       await vm.restoreShift();
 
       expect(vm.state, ShiftState.open);
@@ -114,7 +74,7 @@ void main() {
 
   group('closeCurrentShift', () {
     setUp(() async {
-      repo.openShiftResult = Result.ok(_shift('s1'));
+      repo.openShiftResult = Result.ok(fakeShift('s1'));
       await vm.restoreShift();
     });
 
@@ -161,7 +121,7 @@ void main() {
     test(
       'returns to unknown so the next login re-reads the database',
       () async {
-        repo.openShiftResult = Result.ok(_shift('s1'));
+        repo.openShiftResult = Result.ok(fakeShift('s1'));
         await vm.restoreShift();
 
         vm.reset();

@@ -6,6 +6,7 @@ import 'package:pos_tablet/di/app_dependencies.dart';
 import 'package:pos_tablet/ui/sales/viewmodel/catalogue_view_model.dart';
 import 'package:pos_tablet/ui/sales/viewmodel/checkout_view_model.dart';
 import 'package:pos_tablet/ui/sales/viewmodel/sales_history_view_model.dart';
+import 'package:pos_tablet/ui/shifts/shift_summary_view_model.dart';
 import 'package:pos_tablet/ui/shifts/shift_view_model.dart';
 import 'package:pos_tablet/ui/stock/stock_receiving_view_model.dart';
 import 'package:provider/provider.dart';
@@ -44,6 +45,13 @@ class PosTabletApp extends StatelessWidget {
         ChangeNotifierProvider<SalesHistoryViewModel>(
           create: (_) =>
               SalesHistoryViewModel(dependencies.saleRepository)..loadInitial(),
+        ),
+
+        ChangeNotifierProvider<ShiftSummaryViewModel>(
+          create: (_) => ShiftSummaryViewModel(
+            dependencies.shiftSummaryRepository,
+            context.read<ShiftViewModel>(),
+          ),
         ),
       ],
       child: const _AppView(),

@@ -3,6 +3,7 @@ import 'package:pos_tablet/data/local/app_database.dart';
 import 'package:pos_tablet/data/local/tables/catalogue_table.dart';
 import 'package:pos_tablet/data/local/tables/sale_lines_table.dart';
 import 'package:pos_tablet/data/local/tables/sales_table.dart';
+import 'package:shared_core/domain/model/shift_sales_summary.dart';
 
 part 'sales_dao.g.dart';
 
@@ -76,6 +77,32 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
       );
     }
   });
+
+  //
+  /// Live totals for one shift, computed in SQL. Local data only.
+  Stream<ShiftSalesSummary> watchShiftSummary(String shiftId) {
+    final count = salesTable.id.count();
+    final cash = salesTable.totalCents.sum(
+      filter: salesTable.paymentMethod.equals('cash'),
+    );
+    final ecoCash = salesTable.totalCents.sum(
+      filter: salesTable.paymentMethod.equals('ecocash_usd'),
+    );
+
+    final query = selectOnly(salesTable)
+      ..addColumns([count, cash, ecoCash])
+      ..where(salesTable.shiftId.equals(shiftId));
+
+    return query
+        .map(
+          (row) => ShiftSalesSummary(
+            salesCount: row.read(count) ?? 0,
+            cashSalesCents: row.read(cash) ?? 0,
+            ecoCashSalesCents: row.read(ecoCash) ?? 0,
+          ),
+        )
+        .watchSingle();
+  }
 
   /// Returns sales that still need to be pushed to Supabase.
   Future<List<SalesTableData>> getUnsynced() =>

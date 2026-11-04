@@ -3,6 +3,7 @@ import 'package:pos_tablet/data/local/app_database.dart';
 import 'package:pos_tablet/data/repository/product_repo.dart';
 import 'package:pos_tablet/data/repository/sale_repo.dart';
 import 'package:pos_tablet/data/repository/shift_repo.dart';
+import 'package:pos_tablet/data/repository/shift_summary_repo.dart';
 import 'package:pos_tablet/data/repository/stock_repo.dart';
 import 'package:pos_tablet/data/source/product_service.dart';
 import 'package:pos_tablet/data/source/sale_service.dart';
@@ -25,6 +26,7 @@ class AppDependencies {
   late final StockReceivingService _stockReceivingService;
   late final StockReceivingRepository _stockReceivingRepository;
   late final SaleSyncService _saleSyncService;
+  late final ShiftSummaryRepository _shiftSummaryRepository;
 
   late final Supabase _supabase;
   late final AppDatabase _db;
@@ -71,6 +73,7 @@ class AppDependencies {
     _stockReceivingRepository = StockReceivingRepositoryImpl(
       _stockReceivingService,
     );
+    _shiftSummaryRepository = ShiftSummaryRepositoryImpl(_db.salesDao);
   }
 
   // Getters
@@ -80,6 +83,7 @@ class AppDependencies {
   SaleRepository get saleRepository => _saleRepository;
   StockReceivingRepository get stockReceivingRepository =>
       _stockReceivingRepository;
+  ShiftSummaryRepository get shiftSummaryRepository => _shiftSummaryRepository;
 
   /// The local Drift database. Exposed so repositories and sync service
   /// can access DAOs directly via [db.shiftsDao], [db.salesDao], etc.

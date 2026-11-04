@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pos_tablet/ui/shared/tablet_scaffold.dart';
+import 'package:pos_tablet/ui/shifts/shift_summary_view_model.dart';
 import 'package:pos_tablet/ui/shifts/shift_view_model.dart';
 import 'package:provider/provider.dart';
 
@@ -79,9 +80,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       value: floatText ?? "An error occured",
                       icon: Icons.account_balance_wallet_outlined,
                     ),
-                    const _SummaryItem(
+                    _SummaryItem(
                       label: 'Sales today',
-                      value: '0',
+                      value: context
+                          .watch<ShiftSummaryViewModel>()
+                          .summary
+                          .salesCount
+                          .toString(),
                       icon: Icons.point_of_sale_outlined,
                     ),
                   ],

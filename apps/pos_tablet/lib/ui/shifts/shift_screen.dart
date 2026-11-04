@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_tablet/ui/shifts/shift_summary_view_model.dart';
 import 'package:pos_tablet/ui/shifts/shift_view_model.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_core/util/result.dart';
@@ -235,8 +236,26 @@ class _ShiftScreenState extends State<ShiftScreen> {
               physics: const NeverScrollableScrollPhysics(),
               childAspectRatio: 1.8,
               children: [
-                _summaryCard('Cash Sales', _money(0), Icons.point_of_sale),
-                _summaryCard('EcoCash Sales', _money(0), Icons.phone_android),
+                _summaryCard(
+                  'Cash Sales',
+                  _money(
+                    context
+                        .read<ShiftSummaryViewModel>()
+                        .summary
+                        .cashSalesCents,
+                  ),
+                  Icons.point_of_sale,
+                ),
+                _summaryCard(
+                  'EcoCash Sales',
+                  _money(
+                    context
+                        .read<ShiftSummaryViewModel>()
+                        .summary
+                        .cashSalesCents,
+                  ),
+                  Icons.phone_android,
+                ),
               ],
             ),
 
