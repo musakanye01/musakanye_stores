@@ -1,6 +1,6 @@
 import 'package:drift/drift.dart';
-import 'package:shared_core/data/local/app_database.dart';
-import 'package:shared_core/data/local/tables/stock_receipts_table.dart';
+import 'package:pos_tablet/data/local/app_database.dart';
+import 'package:pos_tablet/data/local/tables/stock_receipts_table.dart';
 
 part 'stock_receipts_dao.g.dart';
 
@@ -15,9 +15,7 @@ class StockReceiptsDao extends DatabaseAccessor<AppDatabase>
 
   /// Returns all rows pending sync.
   Future<List<StockReceiptsTableData>> getUnsynced() =>
-      (select(stockReceiptsTable)
-            ..where((t) => t.synced.equals(false)))
-          .get();
+      (select(stockReceiptsTable)..where((t) => t.synced.equals(false))).get();
 
   /// Returns recent receipts, newest-first.
   Future<List<StockReceiptsTableData>> getRecent({int limit = 50}) =>

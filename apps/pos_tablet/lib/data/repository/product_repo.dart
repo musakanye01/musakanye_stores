@@ -1,7 +1,8 @@
 import 'dart:async';
 
+import 'package:pos_tablet/data/local/dao/catalogue_dao.dart';
 import 'package:pos_tablet/data/source/product_service.dart';
-import 'package:shared_core/data/local/dao/catalogue_dao.dart';
+
 import 'package:shared_core/domain/model/catalogue_item.dart';
 import 'package:shared_core/util/result.dart';
 
@@ -20,37 +21,39 @@ class ProductRepositoryImpl implements ProductRepository {
   ProductRepositoryImpl(this._productService, this._catalogueDao);
 
   @override
-Future<Result<List<CatalogueItem>>> getCatalogue() async {
-  final List<CatalogueItem> cachedItems;
-  try {
-    final cachedRows = await _catalogueDao.getAll();
-    cachedItems = cachedRows.map(CatalogueDao.toDomain).toList();
-  } catch (_) {
-    return Result.error(
-      Exception('Could not load products from local storage.'),
-    );
+  Future<Result<List<CatalogueItem>>> getCatalogue() async {
+    final List<CatalogueItem> cachedItems;
+    try {
+      final cachedRows = await _catalogueDao.getAll();
+      cachedItems = cachedRows.map(CatalogueDao.toDomain).toList();
+    } catch (_) {
+      return Result.error(
+        Exception('Could not load products from local storage.'),
+      );
+    }
+
+    if (cachedItems.isNotEmpty) {
+      // Avoid stacking refreshes if getCatalogue() is called repeatedly.
+      _backgroundRefresh ??= _refreshCatalogueInBackground()
+          .catchError((_) {}) // a failed refresh must never crash the app
+          .whenComplete(() => _backgroundRefresh = null);
+      unawaited(_backgroundRefresh!);
+      return Result.ok(cachedItems);
+    }
+
+    // Coalesce concurrent first-load requests so an empty cache doesn't
+    // trigger multiple simultaneous downloads.
+    try {
+      return await (_initialLoad ??= _fetchAndCacheCatalogue().whenComplete(
+        () => _initialLoad = null,
+      ));
+    } catch (e) {
+      return Result.error(
+        e is Exception ? e : Exception('Could not load products: $e'),
+      );
+    }
   }
 
-  if (cachedItems.isNotEmpty) {
-    // Avoid stacking refreshes if getCatalogue() is called repeatedly.
-    _backgroundRefresh ??= _refreshCatalogueInBackground()
-        .catchError((_) {}) // a failed refresh must never crash the app
-        .whenComplete(() => _backgroundRefresh = null);
-    unawaited(_backgroundRefresh!);
-    return Result.ok(cachedItems);
-  }
-
-  // Coalesce concurrent first-load requests so an empty cache doesn't
-  // trigger multiple simultaneous downloads.
-  try {
-    return await (_initialLoad ??=
-        _fetchAndCacheCatalogue().whenComplete(() => _initialLoad = null));
-  } catch (e) {
-    return Result.error(
-      e is Exception ? e : Exception('Could not load products: $e'),
-    );
-  }
-}
   Future<void> _refreshCatalogueInBackground() async {
     if (_isRefreshing) return;
 

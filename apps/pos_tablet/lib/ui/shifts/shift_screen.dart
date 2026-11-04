@@ -24,7 +24,7 @@ class _ShiftScreenState extends State<ShiftScreen> {
 
       // Loads the open shift. The ViewModel should then load
       // the sales summary for that shift.
-      context.read<ShiftViewModel>().loadOpenShift.execute();
+      //  context.read<ShiftViewModel>().loadOpenShift.execute();
     });
   }
 
@@ -161,7 +161,7 @@ class _ShiftScreenState extends State<ShiftScreen> {
   Widget build(BuildContext context) {
     final viewModel = context.watch<ShiftViewModel>();
     final shift = viewModel.currentShift;
-    final summary = viewModel.salesSummary;
+    // final summary = viewModel.salesSummary;
 
     final isOpen = shift?.status == 'open';
 
@@ -197,37 +197,36 @@ class _ShiftScreenState extends State<ShiftScreen> {
             ),
             const SizedBox(height: 24),
 
-            if (viewModel.isLoadingSummary)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 12),
-                child: LinearProgressIndicator(),
-              ),
+            // if (viewModel.isLoadingSummary)
+            //   const Padding(
+            //     padding: EdgeInsets.symmetric(vertical: 12),
+            //     child: LinearProgressIndicator(),
+            //   ),
 
-            if (viewModel.summaryError != null)
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.error_outline),
-                      const SizedBox(width: 12),
-                      Expanded(child: Text(viewModel.summaryError!)),
-                      IconButton(
-                        tooltip: 'Retry loading sales',
-                        onPressed: () {
-                          if (shift != null) {
-                            viewModel.loadSalesSummary();
-                          } else {
-                            viewModel.loadOpenShift.execute();
-                          }
-                        },
-                        icon: const Icon(Icons.refresh),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
+            // if (viewModel.summaryError != null)
+            //   Card(
+            //     child: Padding(
+            //       padding: const EdgeInsets.all(16),
+            //       child: Row(
+            //         children: [
+            //           const Icon(Icons.error_outline),
+            //           const SizedBox(width: 12),
+            //           Expanded(child: Text(viewModel.summaryError!)),
+            //           IconButton(
+            //             tooltip: 'Retry loading sales',
+            //             onPressed: () {
+            //               if (shift != null) {
+            //                 viewModel.loadSalesSummary();
+            //               } else {
+            //                 viewModel.loadOpenShift.execute();
+            //               }
+            //             },
+            //             icon: const Icon(Icons.refresh),
+            //           ),
+            //         ],
+            //       ),
+            //     ),
+            //   ),
             GridView.count(
               crossAxisCount: 2,
               crossAxisSpacing: 16,
@@ -236,16 +235,8 @@ class _ShiftScreenState extends State<ShiftScreen> {
               physics: const NeverScrollableScrollPhysics(),
               childAspectRatio: 1.8,
               children: [
-                _summaryCard(
-                  'Cash Sales',
-                  _money(summary.cashSalesCents),
-                  Icons.point_of_sale,
-                ),
-                _summaryCard(
-                  'EcoCash Sales',
-                  _money(summary.ecoCashSalesCents),
-                  Icons.phone_android,
-                ),
+                _summaryCard('Cash Sales', _money(0), Icons.point_of_sale),
+                _summaryCard('EcoCash Sales', _money(0), Icons.phone_android),
               ],
             ),
 

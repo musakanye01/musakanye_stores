@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
-import 'package:shared_core/data/local/app_database.dart';
-import 'package:shared_core/data/local/tables/shifts_table.dart';
+import 'package:pos_tablet/data/local/app_database.dart';
+import 'package:pos_tablet/data/local/tables/shifts_table.dart';
+
 import 'package:shared_core/domain/model/shift.dart';
 
 part 'shifts_dao.g.dart';
@@ -33,6 +34,15 @@ class ShiftsDao extends DatabaseAccessor<AppDatabase> with _$ShiftsDaoMixin {
               ..limit(1))
             .getSingleOrNull();
     return row != null;
+  }
+
+  /// Returns false (and inserts nothing) if the cashier already has an open shift.
+  Future<bool> insertIfNoneOpen(ShiftsTableCompanion shift, String cashierId) {
+    return transaction(() async {
+      if (await getOpenShift(cashierId) != null) return false;
+      await upsertShift(shift);
+      return true;
+    });
   }
 
   /// Returns a shift by its local ID.

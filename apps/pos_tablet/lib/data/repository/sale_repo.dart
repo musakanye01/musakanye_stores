@@ -1,8 +1,8 @@
 import 'dart:async';
 
+import 'package:pos_tablet/data/local/app_database.dart';
+import 'package:pos_tablet/data/local/dao/sales_dao.dart';
 import 'package:pos_tablet/data/source/sale_service.dart';
-import 'package:shared_core/data/local/app_database.dart';
-import 'package:shared_core/data/local/dao/sales_dao.dart';
 import 'package:shared_core/domain/model/sale_history.dart';
 import 'package:shared_core/domain/model/sale_line.dart';
 import 'package:shared_core/util/result.dart';

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:shared_core/domain/model/app_user.dart';
 import 'package:shared_core/util/result.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -5,6 +6,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class AuthService {
   AuthService(this._client);
   final SupabaseClient _client;
+
+  final ValueNotifier<bool> needsReLogin = ValueNotifier(false);
+  Future<bool>? _refreshInFlight;
 
   Future<Result<AppUser>> login(String email, String password) async {
     try {
@@ -34,6 +38,32 @@ class AuthService {
       return Result.error(
         Exception('Unable to sign in. Check your connection and try again.'),
       );
+    }
+  }
+
+  Future<bool> ensureValidSession() {
+    return _refreshInFlight ??= _ensureValidSession().whenComplete(() {
+      _refreshInFlight = null;
+    });
+  }
+
+  Future<bool> _ensureValidSession() async {
+    final session = _client.auth.currentSession;
+    if (session == null) return false;
+    if (!session.isExpired) return true;
+
+    try {
+      final res = await _client.auth.refreshSession();
+      final ok = res.session != null;
+      if (ok) needsReLogin.value = false;
+      return ok;
+    } on AuthRetryableFetchException {
+      return false; // offline or unreachable: keep session, retry later
+    } on AuthException {
+      needsReLogin.value = true; // refresh token rejected: must sign in again
+      return false;
+    } catch (_) {
+      return false;
     }
   }
 

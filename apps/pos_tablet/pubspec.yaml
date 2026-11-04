@@ -49,6 +49,8 @@ dependencies:
   drift_flutter: ^0.3.0
   sqlite3_flutter_libs: ^0.6.0+eol
   path_provider: ^2.1.6
+  http: ^1.6.0
+  meta: ^1.19.0
 
 dev_dependencies:
   flutter_test:
@@ -61,7 +63,7 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
   build_runner: ^2.16.2
-  drift_dev: ^2.35.1
+  drift_dev: ^2.35.2
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

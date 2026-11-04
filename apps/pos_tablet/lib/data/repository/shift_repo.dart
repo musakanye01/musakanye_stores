@@ -1,21 +1,18 @@
 import 'package:drift/drift.dart';
+import 'package:pos_tablet/data/local/app_database.dart';
+import 'package:pos_tablet/data/local/dao/shifts_dao.dart';
 import 'package:pos_tablet/data/source/shift_service.dart';
-import 'package:shared_core/data/local/app_database.dart';
-import 'package:shared_core/data/local/dao/shifts_dao.dart';
 import 'package:shared_core/domain/model/shift.dart';
-import 'package:shared_core/domain/model/shift_sales_summary.dart';
 import 'package:shared_core/util/result.dart';
 import 'package:uuid/uuid.dart';
 
 abstract class ShiftRepository {
   Future<Result<Shift>> startShift({
     required int openingFloatCents,
-    required String idempotencyKey,
     String? deviceId,
   });
-  Future<Result<Shift?>> getOpenShift();
 
-  Future<Result<ShiftSalesSummary>> getSalesSummary(String shiftId);
+  Future<Result<Shift?>> getOpenShift();
 
   Future<Result<void>> closeShift({
     required String shiftId,
@@ -25,7 +22,7 @@ abstract class ShiftRepository {
 }
 
 class ShiftRepositoryImpl implements ShiftRepository {
-  final ShiftService _shiftService;
+  final ShiftService _shiftService; // used only for currentUserId for now
   final ShiftsDao _shiftsDao;
 
   ShiftRepositoryImpl(this._shiftService, this._shiftsDao);
@@ -33,10 +30,10 @@ class ShiftRepositoryImpl implements ShiftRepository {
   @override
   Future<Result<Shift>> startShift({
     required int openingFloatCents,
-    required String idempotencyKey,
     String? deviceId,
   }) async {
-    final cashierId = _shiftService.currentUserId;
+    final cashierId =
+        _shiftService.currentUserId; // read from persisted session
     if (cashierId == null) {
       return Result.error(Exception('You are not signed in.'));
     }
@@ -47,59 +44,38 @@ class ShiftRepositoryImpl implements ShiftRepository {
     final shiftId = const Uuid().v4();
     final openedAt = DateTime.now().toUtc();
 
-    final localShift = Shift(
-      id: shiftId,
-      cashierId: cashierId,
-      deviceId: deviceId,
-      openingFloatCents: openingFloatCents,
-      status: 'open',
-      openedAt: openedAt,
-    );
-
     try {
-      await _shiftsDao.upsertShift(
+      final inserted = await _shiftsDao.insertIfNoneOpen(
         ShiftsTableCompanion.insert(
           id: shiftId,
           cashierId: cashierId,
           status: 'open',
           openingFloatCents: openingFloatCents,
-          idempotencyKey: idempotencyKey,
+          idempotencyKey:
+              shiftId, // the shift id is the key; column can go later
           openedAt: openedAt,
           synced: const Value(false),
         ),
+        cashierId,
       );
+
+      if (!inserted) {
+        return Result.error(Exception('You already have an open shift.'));
+      }
     } catch (e) {
       return Result.error(Exception('Could not save shift locally: $e'));
     }
 
-    final remoteResult = await _shiftService.startShift(
-      openingFloatCents: openingFloatCents,
-      shiftId: shiftId,
-      idempotencyKey: idempotencyKey,
-      deviceId: deviceId,
+    return Result.ok(
+      Shift(
+        id: shiftId,
+        cashierId: cashierId,
+        deviceId: deviceId,
+        openingFloatCents: openingFloatCents,
+        status: 'open',
+        openedAt: openedAt,
+      ),
     );
-
-    switch (remoteResult) {
-      case Ok<Shift>(value: final remoteShift):
-        try {
-          await _saveRemoteShift(remoteShift, idempotencyKey);
-          await _shiftsDao.markSynced(shiftId);
-        } catch (e) {
-          await _shiftsDao.markSyncFailed(shiftId, e.toString());
-        }
-        return Result.ok(remoteShift);
-
-      case Error<Shift>(error: final error):
-        // A uniqueness conflict is a business rule violation, not an offline
-        // condition. Keep the locally-created row from being treated as a
-        // successful start in this case.
-        if (error.toString().contains('already have an open shift') ||
-            error.toString().contains('not signed in')) {
-          return Result.error(error);
-        }
-        await _shiftsDao.markSyncFailed(shiftId, error.toString());
-        return Result.ok(localShift);
-    }
   }
 
   @override
@@ -108,35 +84,11 @@ class ShiftRepositoryImpl implements ShiftRepository {
     if (cashierId == null) return Result.ok(null);
 
     try {
-      final localShift = await _shiftsDao.getOpenShift(cashierId);
-      if (localShift != null) {
-        return Result.ok(ShiftsDao.toDomain(localShift));
-      }
-
-      // Do not restore a remote open shift if this device has an un-synced
-      // local close for the cashier.
-      if (await _shiftsDao.hasPendingClose(cashierId)) {
-        return Result.ok(null);
-      }
-
-      final remoteResult = await _shiftService.getOpenShift();
-      switch (remoteResult) {
-        case Ok<Shift?>(value: final remoteShift):
-          if (remoteShift == null) return Result.ok(null);
-          await _saveRemoteShift(remoteShift, 'remote-${remoteShift.id}');
-          await _shiftsDao.markSynced(remoteShift.id);
-          return Result.ok(remoteShift);
-        case Error<Shift?>(error: final error):
-          return Result.error(error);
-      }
+      final local = await _shiftsDao.getOpenShift(cashierId);
+      return Result.ok(local == null ? null : ShiftsDao.toDomain(local));
     } catch (e) {
       return Result.error(Exception('Could not load local shift: $e'));
     }
-  }
-
-  @override
-  Future<Result<ShiftSalesSummary>> getSalesSummary(String shiftId) {
-    return _shiftService.getSalesSummary(shiftId);
   }
 
   @override
@@ -150,54 +102,23 @@ class ShiftRepositoryImpl implements ShiftRepository {
     }
 
     try {
-      final localShift = await _shiftsDao.getById(shiftId);
-      if (localShift == null) {
+      final local = await _shiftsDao.getById(shiftId);
+      if (local == null) {
         return Result.error(Exception('The shift could not be found locally.'));
       }
-      if (localShift.status != 'open') {
+      if (local.status != 'open') {
         return Result.error(Exception('This shift is already closed.'));
       }
 
+      final note = closingNote?.trim();
       await _shiftsDao.markClosed(
         shiftId: shiftId,
         countedCashCents: countedCashCents,
-        closingNote: closingNote?.trim().isEmpty == true
-            ? null
-            : closingNote?.trim(),
+        closingNote: (note == null || note.isEmpty) ? null : note,
       );
+      return const Result.ok(null);
     } catch (e) {
       return Result.error(Exception('Could not save shift close locally: $e'));
     }
-
-    final remoteResult = await _shiftService.closeShift(
-      shiftId: shiftId,
-      countedCashCents: countedCashCents,
-      closingNote: closingNote,
-    );
-
-    switch (remoteResult) {
-      case Ok<void>():
-        await _shiftsDao.markSynced(shiftId);
-        return const Result.ok(null);
-      case Error<void>(error: final error):
-        await _shiftsDao.markSyncFailed(shiftId, error.toString());
-        // The local close is authoritative for the tablet until sync retries.
-        return const Result.ok(null);
-    }
-  }
-
-  Future<void> _saveRemoteShift(Shift shift, String idempotencyKey) async {
-    await _shiftsDao.upsertShift(
-      ShiftsTableCompanion.insert(
-        id: shift.id,
-        cashierId: shift.cashierId,
-        status: shift.status,
-        openingFloatCents: shift.openingFloatCents,
-        idempotencyKey: idempotencyKey,
-        openedAt: shift.openedAt.toUtc(),
-        closingCountedCents: Value(shift.closingFloatCents),
-        synced: const Value(true),
-      ),
-    );
   }
 }

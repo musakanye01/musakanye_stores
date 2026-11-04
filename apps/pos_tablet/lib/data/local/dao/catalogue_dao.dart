@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
-import 'package:shared_core/data/local/app_database.dart';
-import 'package:shared_core/data/local/tables/catalogue_table.dart';
+import 'package:pos_tablet/data/local/app_database.dart';
+import 'package:pos_tablet/data/local/tables/catalogue_table.dart';
+
 import 'package:shared_core/domain/model/catalogue_item.dart';
 
 part 'catalogue_dao.g.dart';

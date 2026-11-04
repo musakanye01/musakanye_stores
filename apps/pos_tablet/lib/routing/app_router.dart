@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pos_tablet/ui/auth/login_screen.dart';
 import 'package:pos_tablet/ui/cash/cash_movements_screen.dart';
@@ -9,29 +10,52 @@ import 'package:pos_tablet/ui/sales/product_catalogue_screen.dart';
 import 'package:pos_tablet/ui/sales/receipt_screen.dart';
 import 'package:pos_tablet/ui/sales/sales_history_screen.dart';
 import 'package:pos_tablet/ui/shifts/shift_screen.dart';
+import 'package:pos_tablet/ui/shifts/shift_view_model.dart';
 import 'package:pos_tablet/ui/shifts/start_shift_screen.dart';
 import 'package:pos_tablet/ui/stock/stock_receiving_screen.dart';
 import 'package:shared_core/ui/auth_view_model.dart';
 
-// ...your other imports unchanged
+const loginRoute = '/login';
+const startShiftRoute = '/start-shift';
+const dashboardRoute = '/dashboard'; // use your real paths
+const _publicRoutes = {loginRoute};
 
-const _publicRoutes = {'/login'};
-const _homeRoute = '/start-shift'; // where to land after login
+String? resolveRedirect({
+  required AuthStatus auth,
+  required ShiftState shift,
+  required String location,
+}) {
+  if (auth == AuthStatus.uninitialized) return null;
 
-GoRouter createRouter(AuthViewModel auth) => GoRouter(
-  initialLocation: '/login',
-  refreshListenable: auth,
-  redirect: (context, state) {
-    // Still restoring session: stay put, don't redirect yet
-    if (auth.status == AuthStatus.uninitialized) return null;
+  final onPublic = _publicRoutes.contains(location);
 
-    final loggedIn = auth.status == AuthStatus.authenticated;
-    final onPublic = _publicRoutes.contains(state.matchedLocation);
+  if (auth == AuthStatus.unauthenticated) {
+    return onPublic ? null : loginRoute;
+  }
 
-    if (!loggedIn && !onPublic) return '/login';
-    if (loggedIn && onPublic) return _homeRoute;
-    return null;
-  },
+  // Authenticated, local shift check still running: stay put.
+  if (shift == ShiftState.unknown) return null;
+
+  final home = shift == ShiftState.open ? dashboardRoute : startShiftRoute;
+  if (onPublic) return home;
+
+  if (shift == ShiftState.open && location == startShiftRoute) {
+    return dashboardRoute;
+  }
+  if (shift == ShiftState.none && location.startsWith(dashboardRoute)) {
+    return startShiftRoute;
+  }
+  return null;
+}
+
+GoRouter createRouter(AuthViewModel auth, ShiftViewModel shift) => GoRouter(
+  initialLocation: loginRoute,
+  refreshListenable: Listenable.merge([auth, shift]),
+  redirect: (context, state) => resolveRedirect(
+    auth: auth.status,
+    shift: shift.state,
+    location: state.matchedLocation,
+  ),
   routes: [
     GoRoute(
       path: '/login',

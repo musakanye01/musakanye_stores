@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_tablet/data/source/sync_failure.dart';
 import 'package:shared_core/domain/model/sale_history.dart';
 import 'package:shared_core/domain/model/sale_line.dart';
 import 'package:shared_core/util/result.dart';
@@ -156,8 +157,8 @@ class SaleService {
       return Result.ok(SaleResult.fromJson(response as Map<String, dynamic>));
     } on PostgrestException catch (e) {
       return Result.error(Exception(_friendly(e.message)));
-    } catch (_) {
-      return Result.error(Exception('Could not synchronize the offline sale.'));
+    } catch (error) {
+      return Result.error(classifySyncError(error));
     }
   }
 

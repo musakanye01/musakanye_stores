@@ -2,8 +2,9 @@ import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/widgets.dart';
+import 'package:pos_tablet/data/local/dao/sales_dao.dart';
 import 'package:pos_tablet/data/source/sale_service.dart';
-import 'package:shared_core/data/local/dao/sales_dao.dart';
+
 import 'package:shared_core/domain/model/sale_line.dart';
 import 'package:shared_core/util/result.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -17,16 +18,15 @@ class SaleSyncService with WidgetsBindingObserver {
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
   StreamSubscription<AuthState>? _authSubscription;
 
-  bool _isSyncing = false;
   bool _started = false;
+  bool _isSyncing = false;
 
   SaleSyncService({
     required this._salesDao,
-    required SaleService saleService,
+    required this._saleService,
     required SupabaseClient supabaseClient,
     Connectivity? connectivity,
-  }) : _saleService = saleService,
-       _supabase = supabaseClient,
+  }) : _supabase = supabaseClient,
        _connectivity = connectivity ?? Connectivity();
 
   /// Starts automatic sync triggers.

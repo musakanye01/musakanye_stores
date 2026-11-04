@@ -12,6 +12,8 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  String? floatText;
+
   @override
   void initState() {
     super.initState();
@@ -21,7 +23,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final shiftViewModel = context.read<ShiftViewModel>();
     if (shiftViewModel.currentShift == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) shiftViewModel.loadOpenShift.execute();
+        if (mounted) {
+          shiftViewModel.startShift.execute(int.parse(floatText ?? "0"));
+        }
       });
     }
   }
@@ -30,9 +34,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     final shiftViewModel = context.watch<ShiftViewModel>();
     final shift = shiftViewModel.currentShift;
-    final isLoadingShift = shiftViewModel.loadOpenShift.running;
+    final isLoadingShift = shiftViewModel.startShift.running;
 
-    final String floatText;
     if (shift != null) {
       floatText = '\$${shift.openingFloat.toStringAsFixed(2)}';
     } else if (isLoadingShift) {
@@ -73,7 +76,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                     _SummaryItem(
                       label: 'Opening float',
-                      value: floatText,
+                      value: floatText ?? "An error occured",
                       icon: Icons.account_balance_wallet_outlined,
                     ),
                     const _SummaryItem(

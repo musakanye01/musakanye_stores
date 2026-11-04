@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pos_tablet/di/app_dependencies.dart';
@@ -57,12 +59,37 @@ class _AppView extends StatefulWidget {
 }
 
 class _AppViewState extends State<_AppView> {
+  late final AuthViewModel _auth;
+  late final ShiftViewModel _shift;
   late final GoRouter _router;
 
   @override
   void initState() {
     super.initState();
-    _router = createRouter(context.read<AuthViewModel>());
+    _auth = context.read<AuthViewModel>();
+    _shift = context.read<ShiftViewModel>();
+    _router = createRouter(_auth, _shift);
+
+    _auth.addListener(_onAuthChanged);
+    _onAuthChanged(); // auth might already be resolved by the time we get here
+  }
+
+  void _onAuthChanged() {
+    switch (_auth.status) {
+      case AuthStatus.authenticated:
+        unawaited(_shift.restoreShift()); // idempotent, local-only
+      case AuthStatus.unauthenticated:
+        _shift.reset();
+      case AuthStatus.uninitialized:
+        break;
+    }
+  }
+
+  @override
+  void dispose() {
+    _auth.removeListener(_onAuthChanged);
+    _router.dispose();
+    super.dispose();
   }
 
   @override

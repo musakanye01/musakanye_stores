@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_tablet/data/local/app_database.dart';
 import 'package:pos_tablet/data/repository/product_repo.dart';
 import 'package:pos_tablet/data/repository/sale_repo.dart';
 import 'package:pos_tablet/data/repository/shift_repo.dart';
@@ -9,7 +10,6 @@ import 'package:pos_tablet/data/source/shift_service.dart';
 import 'package:pos_tablet/data/source/stock_receiving_service.dart';
 import 'package:shared_core/data/auth_repo.dart';
 import 'package:shared_core/data/auth_service.dart';
-import 'package:shared_core/data/local/app_database.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:pos_tablet/data/source/sale_sync_service.dart';
 
@@ -39,7 +39,7 @@ class AppDependencies {
   }
 
   Future<void> _initializeDependencies() async {
-    _supabase = _supabase = Supabase.instance;
+    _supabase = Supabase.instance;
     // Local Drift database — source of truth for offline-first operation.
     _db = AppDatabase();
 

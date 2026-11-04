@@ -1,8 +1,8 @@
 import 'package:drift/drift.dart';
-import 'package:shared_core/data/local/app_database.dart';
-import 'package:shared_core/data/local/tables/catalogue_table.dart';
-import 'package:shared_core/data/local/tables/sale_lines_table.dart';
-import 'package:shared_core/data/local/tables/sales_table.dart';
+import 'package:pos_tablet/data/local/app_database.dart';
+import 'package:pos_tablet/data/local/tables/catalogue_table.dart';
+import 'package:pos_tablet/data/local/tables/sale_lines_table.dart';
+import 'package:pos_tablet/data/local/tables/sales_table.dart';
 
 part 'sales_dao.g.dart';
 
