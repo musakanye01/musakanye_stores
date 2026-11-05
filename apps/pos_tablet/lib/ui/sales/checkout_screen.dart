@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pos_tablet/ui/sales/viewmodel/cart_view_model.dart';
 import 'package:pos_tablet/ui/sales/viewmodel/catalogue_view_model.dart';
 import 'package:pos_tablet/ui/sales/viewmodel/checkout_view_model.dart';
 import 'package:pos_tablet/ui/shifts/shift_view_model.dart';
@@ -10,9 +11,7 @@ import '../shared/tablet_scaffold.dart';
 import 'cart_item.dart';
 
 class CheckoutScreen extends StatefulWidget {
-  const CheckoutScreen({super.key, this.items = const []});
-
-  final List<CartItem> items;
+  const CheckoutScreen({super.key});
 
   @override
   State<CheckoutScreen> createState() => _CheckoutScreenState();
@@ -23,6 +22,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   late final CheckoutViewModel _checkoutViewModel;
 
   String _method = 'cash'; // 'cash' | 'ecocash_usd'
+
+  List<CartItem> get _items => context.read<CartViewModel>().items;
+
+  int get _totalCents => context.read<CartViewModel>().totalCents;
 
   static const _methodLabels = {'cash': 'Cash', 'ecocash_usd': 'EcoCash (USD)'};
 
@@ -40,18 +43,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     super.dispose();
   }
 
-  // Items from the route if present, otherwise the shared cart.
-  List<CartItem> get _items => widget.items.isNotEmpty
-      ? widget.items
-      : context.read<CatalogueViewModel>().cart;
-
   bool get _isCash => _method == 'cash';
-
-  // ---- Money (all in cents) ----
-  int get _totalCents => _items.fold<int>(
-    0,
-    (sum, i) => sum + (i.unitPrice * 100).round() * i.quantity,
-  );
 
   int? get _receivedCents {
     final amount = double.tryParse(_amountReceivedController.text.trim());
@@ -118,11 +110,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       final message = command.result.toString().replaceAll('Exception: ', '');
       command.clearResult();
       if (!mounted) return;
-      _showError(message);
-
-      if (message.contains('stock') || message.contains('available')) {
-        context.read<CatalogueViewModel>().loadCatalogue.execute();
-      }
+      _showError(
+        message,
+      ); // no catalogue reload: the stream keeps stock current
       return;
     }
 
@@ -131,16 +121,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       command.clearResult();
       if (sale == null || !mounted) return;
 
-      final items = List<CartItem>.of(_items);
+      final items = List<CartItem>.of(_items); // snapshot before clearing
       final tendered = _isCash
           ? (_receivedCents ?? sale.totalCents)
           : sale.totalCents;
       final change = _isCash ? tendered - sale.totalCents : 0;
 
-      final catalogue = context.read<CatalogueViewModel>();
-
-      catalogue.applyLocalSale(items);
-      catalogue.clearCart();
+      context.read<CartViewModel>().clear();
 
       context.goNamed(
         'receipt',

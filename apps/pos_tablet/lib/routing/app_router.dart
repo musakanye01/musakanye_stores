@@ -113,8 +113,7 @@ GoRouter createRouter(AuthViewModel auth, ShiftViewModel shift) => GoRouter(
     GoRoute(
       path: '/checkout',
       name: 'checkout',
-      builder: (context, state) =>
-          CheckoutScreen(items: state.extra as List<CartItem>? ?? []),
+      builder: (context, state) => CheckoutScreen(),
     ),
     GoRoute(
       path: '/cart',

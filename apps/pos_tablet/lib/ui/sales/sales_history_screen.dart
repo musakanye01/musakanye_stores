@@ -63,10 +63,11 @@ class _SalesHistoryView extends StatelessWidget {
             : '$productName — $description';
 
         return CartItem(
-          productId: row['variant_id'] as String,
+          variantId: row['variant_id'] as String,
           name: name,
           quantity: (row['quantity'] as num).toInt(),
-          unitPrice: (row['unit_price_cents'] as num).toInt() / 100,
+          unitPriceCents: (row['unit_price_cents'] as num).toInt(),
+          availableStock: 24, //todo: to be fixed.
         );
       }).toList();
 

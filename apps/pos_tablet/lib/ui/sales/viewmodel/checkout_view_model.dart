@@ -47,7 +47,7 @@ class CheckoutViewModel extends ChangeNotifier {
         input.items
             .map(
               (item) => SaleLine(
-                variantId: item.productId,
+                variantId: item.variantId,
                 quantity: item.quantity,
                 unitPriceCents: (item.unitPrice * 100).round(),
               ),

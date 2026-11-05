@@ -27,6 +27,8 @@ class CatalogueDao extends DatabaseAccessor<AppDatabase>
         }
       });
 
+  Stream<List<CatalogueTableData>> watchAll() => select(catalogueTable).watch();
+
   /// Replaces the cache after a complete successful catalogue fetch.
   /// This also removes products/variants that are no longer active remotely.
   Future<void> replaceAll(List<CatalogueTableCompanion> rows) =>

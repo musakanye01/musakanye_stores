@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:pos_tablet/ui/sales/viewmodel/catalogue_view_model.dart';
+import 'package:pos_tablet/ui/sales/viewmodel/cart_view_model.dart';
 import 'package:provider/provider.dart';
 
 import '../shared/tablet_scaffold.dart';
@@ -10,8 +10,7 @@ class CartScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<CatalogueViewModel>();
-    final cart = vm.cart;
+    final vm = context.watch<CartViewModel>();
 
     return TabletScaffold(
       child: Padding(
@@ -35,7 +34,7 @@ class CartScreen extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '${vm.cartItemCount} items',
+                  '${vm.itemCount} items',
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
               ],
@@ -45,13 +44,13 @@ class CartScreen extends StatelessWidget {
 
             // Cart contents
             Expanded(
-              child: cart.isEmpty
+              child: vm.isEmpty
                   ? _buildEmptyCart(context)
                   : ListView.separated(
-                      itemCount: cart.length,
+                      itemCount: vm.itemCount,
                       separatorBuilder: (_, _) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
-                        final item = cart[index];
+                        final item = vm.items[index];
 
                         return Card(
                           child: Padding(
@@ -94,7 +93,7 @@ class CartScreen extends StatelessWidget {
                                     IconButton(
                                       tooltip: 'Decrease quantity',
                                       onPressed: () =>
-                                          vm.decreaseQuantity(item.productId),
+                                          vm.decrease(item.variantId),
                                       icon: const Icon(
                                         Icons.remove_circle_outline,
                                       ),
@@ -112,8 +111,8 @@ class CartScreen extends StatelessWidget {
                                     IconButton(
                                       tooltip: 'Increase quantity',
                                       onPressed: () {
-                                        final increased = vm.increaseQuantity(
-                                          item.productId,
+                                        final increased = vm.increase(
+                                          item.variantId,
                                         );
 
                                         if (!increased && context.mounted) {
@@ -155,8 +154,7 @@ class CartScreen extends StatelessWidget {
                                 // Remove item
                                 IconButton(
                                   tooltip: 'Remove item',
-                                  onPressed: () =>
-                                      vm.removeFromCart(item.productId),
+                                  onPressed: () => vm.remove(item.variantId),
                                   icon: Icon(
                                     Icons.delete_outline,
                                     color: Theme.of(context).colorScheme.error,
@@ -185,20 +183,20 @@ class CartScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '\$${vm.cartTotal.toStringAsFixed(2)}',
+                        '\$${vm.totalCents.toStringAsFixed(2)}',
                         style: Theme.of(context).textTheme.headlineSmall,
                       ),
                     ],
                   ),
                 ),
                 OutlinedButton.icon(
-                  onPressed: cart.isEmpty ? null : () => vm.clearCart(),
+                  onPressed: vm.isEmpty ? null : () => vm.clear(),
                   icon: const Icon(Icons.delete_outline),
                   label: const Text('Clear cart'),
                 ),
                 const SizedBox(width: 12),
                 FilledButton.icon(
-                  onPressed: cart.isEmpty
+                  onPressed: vm.isEmpty
                       ? null
                       : () => context.goNamed('checkout'),
                   icon: const Icon(Icons.payment),

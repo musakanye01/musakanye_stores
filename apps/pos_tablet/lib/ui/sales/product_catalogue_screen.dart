@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pos_tablet/ui/sales/viewmodel/cart_view_model.dart';
 import 'package:pos_tablet/ui/sales/viewmodel/catalogue_view_model.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_core/domain/model/catalogue_item.dart';
 
 import '../shared/tablet_scaffold.dart';
-import 'cart_item.dart';
 
 class ProductCatalogueScreen extends StatefulWidget {
   const ProductCatalogueScreen({super.key});
@@ -23,12 +23,6 @@ class _ProductCatalogueScreenState extends State<ProductCatalogueScreen> {
     super.initState();
     _viewModel = context.read<CatalogueViewModel>();
     _searchController = TextEditingController(text: _viewModel.searchQuery);
-
-    if (_viewModel.items.isEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _viewModel.loadCatalogue.execute();
-      });
-    }
   }
 
   @override
@@ -38,28 +32,18 @@ class _ProductCatalogueScreenState extends State<ProductCatalogueScreen> {
   }
 
   void _addToCart(CatalogueItem item) {
-    _viewModel.addToCart(item);
-    // ScaffoldMessenger.of(context)
-    //   ..hideCurrentSnackBar()
-    //   ..showSnackBar(
-    //     SnackBar(
-    //       content: Text(
-    //         added
-    //             ? '${item.displayName} added to cart'
-    //             : 'Only ${item.stockOnHand} of ${item.displayName} in stock.',
-    //       ),
-    //     ),
-    //   );
+    context.read<CartViewModel>().add(item);
   }
 
   void _openCart() {
-    if (_viewModel.cart.isEmpty) return;
-    context.goNamed('cart', extra: List<CartItem>.of(_viewModel.cart));
+    if (context.read<CartViewModel>().isEmpty) return;
+    context.goNamed('cart');
   }
 
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<CatalogueViewModel>();
+    final cart = context.watch<CartViewModel>();
 
     return TabletScaffold(
       child: Padding(
@@ -82,19 +66,19 @@ class _ProductCatalogueScreenState extends State<ProductCatalogueScreen> {
               onChanged: vm.setSearchQuery,
             ),
             const SizedBox(height: 20),
-            Expanded(child: _buildBody(context, vm)),
+            Expanded(child: _buildBody(context, vm, cart)),
             const Divider(),
             Row(
               children: [
                 Expanded(
                   child: Text(
-                    'Cart: ${vm.cartItemCount} items · '
-                    '\$${vm.cartTotal.toStringAsFixed(2)}',
+                    'Cart: ${cart.itemCount} items · '
+                    '\$${(cart.totalCents / 100).toStringAsFixed(2)}',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
                 FilledButton.icon(
-                  onPressed: vm.cart.isEmpty ? null : _openCart,
+                  onPressed: cart.isEmpty ? null : _openCart,
                   icon: const Icon(Icons.shopping_cart),
                   label: const Text('View Cart'),
                 ),
@@ -106,34 +90,29 @@ class _ProductCatalogueScreenState extends State<ProductCatalogueScreen> {
     );
   }
 
-  Widget _buildBody(BuildContext context, CatalogueViewModel vm) {
-    final command = vm.loadCatalogue;
-
-    if (command.running && vm.items.isEmpty) {
+  Widget _buildBody(
+    BuildContext context,
+    CatalogueViewModel vm,
+    CartViewModel cart,
+  ) {
+    if (!vm.hasLoaded) {
       return const Center(child: CircularProgressIndicator());
     }
-
-    if (command.error && vm.items.isEmpty) {
-      final message = command.result.toString().replaceAll('Exception: ', '');
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(message),
-            const SizedBox(height: 12),
-            OutlinedButton(
-              onPressed: () => command.execute(),
-              child: const Text('Retry'),
-            ),
-          ],
+    if (vm.error != null && vm.items.isEmpty) {
+      return const Center(
+        child: Text('Could not read the product list from this device.'),
+      );
+    }
+    if (vm.isCatalogueEmpty) {
+      return const Center(
+        child: Text(
+          'No products yet. Connect to the internet once to download the catalogue.',
         ),
       );
     }
 
     final items = vm.filteredItems;
-    if (items.isEmpty) {
-      return const Center(child: Text('No products found.'));
-    }
+    if (items.isEmpty) return const Center(child: Text('No products found.'));
 
     return GridView.builder(
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
@@ -145,7 +124,7 @@ class _ProductCatalogueScreenState extends State<ProductCatalogueScreen> {
       itemCount: items.length,
       itemBuilder: (context, index) {
         final item = items[index];
-        final remaining = item.stockOnHand - vm.quantityInCart(item.variantId);
+        final remaining = item.stockOnHand - cart.quantityOf(item.variantId);
         final canAdd = remaining > 0;
 
         return Card(

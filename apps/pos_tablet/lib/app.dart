@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pos_tablet/di/app_dependencies.dart';
+import 'package:pos_tablet/ui/sales/viewmodel/cart_view_model.dart';
 import 'package:pos_tablet/ui/sales/viewmodel/catalogue_view_model.dart';
 import 'package:pos_tablet/ui/sales/viewmodel/checkout_view_model.dart';
 import 'package:pos_tablet/ui/sales/viewmodel/sales_history_view_model.dart';
@@ -47,6 +48,8 @@ class PosTabletApp extends StatelessWidget {
               SalesHistoryViewModel(dependencies.saleRepository)..loadInitial(),
         ),
 
+        ChangeNotifierProvider<CartViewModel>(create: (_) => CartViewModel()),
+
         ChangeNotifierProvider<ShiftSummaryViewModel>(
           create: (_) => ShiftSummaryViewModel(
             dependencies.shiftSummaryRepository,
@@ -86,6 +89,9 @@ class _AppViewState extends State<_AppView> {
     switch (_auth.status) {
       case AuthStatus.authenticated:
         unawaited(_shift.restoreShift()); // idempotent, local-only
+        unawaited(
+          context.read<AppDependencies>().catalogueSeeder.seedIfEmpty(),
+        );
       case AuthStatus.unauthenticated:
         _shift.reset();
       case AuthStatus.uninitialized:
