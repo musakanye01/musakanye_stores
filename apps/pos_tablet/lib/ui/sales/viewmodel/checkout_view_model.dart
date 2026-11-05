@@ -67,7 +67,7 @@ class CheckoutViewModel extends ChangeNotifier {
       _idempotencyKey = _uuid.v4();
     }
 
-    final result = await _saleRepository.createCashSale(
+    final result = await _saleRepository.createSale(
       saleId: _saleId!,
       idempotencyKey: _idempotencyKey!,
       shiftId: input.shiftId,

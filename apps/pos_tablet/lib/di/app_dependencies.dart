@@ -61,13 +61,9 @@ class AppDependencies {
       saleService: _saleService,
       supabaseClient: _supabase.client,
     );
-    _saleRepository = SaleRepositoryImpl(
-      _saleService,
-      _db.salesDao,
-      _saleSyncService,
-    );
+    _saleRepository = SaleRepositoryImpl(_db.salesDao, _db.shiftsDao);
 
-    _saleSyncService.start();
+    // _saleSyncService.start();
 
     _stockReceivingService = StockReceivingService(_supabase.client);
     _stockReceivingRepository = StockReceivingRepositoryImpl(

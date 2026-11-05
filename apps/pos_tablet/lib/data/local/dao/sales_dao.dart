@@ -104,13 +104,6 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
         .watchSingle();
   }
 
-  /// Returns sales that still need to be pushed to Supabase.
-  Future<List<SalesTableData>> getUnsynced() =>
-      (select(salesTable)
-            ..where((t) => t.synced.equals(false))
-            ..orderBy([(t) => OrderingTerm.asc(t.createdAt)]))
-          .get();
-
   /// Returns all lines for a given sale.
   Future<List<SaleLinesTableData>> getLinesForSale(String saleId) =>
       (select(saleLinesTable)..where((t) => t.saleId.equals(saleId))).get();
@@ -137,7 +130,43 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
   /// Returns recent sales, newest first.
   Future<List<SalesTableData>> getRecent({int limit = 50, int offset = 0}) =>
       (select(salesTable)
-            ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
+            ..orderBy([
+              (t) => OrderingTerm.desc(t.createdAt),
+              (t) => OrderingTerm.desc(const CustomExpression<int>('rowid')),
+            ])
             ..limit(limit, offset: offset))
           .get();
+
+  /// Pending sales only. Permanently failed ones wait for an explicit retry.
+  Future<List<SalesTableData>> getUnsynced() =>
+      (select(salesTable)
+            ..where((t) => t.synced.equals(false) & t.syncError.equals(false))
+            ..orderBy([
+              (t) => OrderingTerm.asc(t.createdAt),
+              (t) => OrderingTerm.desc(const CustomExpression<int>('rowid')),
+            ]))
+          .get();
+
+  Future<SalesTableData?> getSaleById(String id) =>
+      (select(salesTable)..where((t) => t.id.equals(id))).getSingleOrNull();
+
+  /// Lines with product names from the local catalogue (for receipts).
+  Future<List<({SaleLinesTableData line, CatalogueTableData? product})>>
+  getLinesWithProducts(String saleId) async {
+    final query = select(saleLinesTable).join([
+      leftOuterJoin(
+        catalogueTable,
+        catalogueTable.variantId.equalsExp(saleLinesTable.variantId),
+      ),
+    ])..where(saleLinesTable.saleId.equals(saleId));
+
+    final rows = await query.get();
+    return [
+      for (final r in rows)
+        (
+          line: r.readTable(saleLinesTable),
+          product: r.readTableOrNull(catalogueTable),
+        ),
+    ];
+  }
 }
