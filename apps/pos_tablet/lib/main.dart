@@ -7,25 +7,32 @@ import 'package:shared_core/theme/theme_notifier.dart';
 import 'app.dart';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    WidgetsFlutterBinding.ensureInitialized();
 
-  const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
-  const supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+    const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
+    const supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
-  if (supabaseUrl.isEmpty || supabaseAnonKey.isEmpty) {
-    throw StateError(
-      'Missing Supabase configuration. '
-      'Provide SUPABASE_URL and SUPABASE_ANON_KEY.',
+    if (supabaseUrl.isEmpty || supabaseAnonKey.isEmpty) {
+      throw StateError(
+        'Missing Supabase configuration. '
+        'Provide SUPABASE_URL and SUPABASE_ANON_KEY.',
+      );
+    }
+
+    await Supabase.initialize(
+      url: supabaseUrl,
+      publishableKey: supabaseAnonKey,
+    );
+  } catch (error, stackTrace) {
+    debugPrint('Error initializing app: $error');
+    debugPrint('Stacktrace: $stackTrace');
+    final deps = await AppDependencies.initialize();
+    runApp(
+      ChangeNotifierProvider(
+        create: (_) => ThemeNotifier(),
+        child: PosTabletApp(dependencies: deps),
+      ),
     );
   }
-
-  await Supabase.initialize(url: supabaseUrl, publishableKey: supabaseAnonKey);
-
-  final deps = await AppDependencies.initialize();
-  runApp(
-    ChangeNotifierProvider(
-      create: (_) => ThemeNotifier(),
-      child: PosTabletApp(dependencies: deps),
-    ),
-  );
 }
