@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pos_tablet/ui/sales/viewmodel/cart_view_model.dart';
-import 'package:pos_tablet/ui/sales/viewmodel/catalogue_view_model.dart';
 import 'package:pos_tablet/ui/sales/viewmodel/checkout_view_model.dart';
 import 'package:pos_tablet/ui/shifts/shift_view_model.dart';
 import 'package:provider/provider.dart';
+import 'package:pos_tablet/ui/shared/money.dart';
 
 import '../shared/tablet_scaffold.dart';
 
@@ -65,7 +65,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     return received != null && received >= _totalCents;
   }
 
-  String _usd(int cents) => '\$${(cents / 100).toStringAsFixed(2)}';
+  String _usd(int cents) => formatUsd(cents);
 
   // ---- Actions ----
   void _completeSale() {
@@ -121,25 +121,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       command.clearResult();
       if (sale == null || !mounted) return;
 
-      final items = List<CartItem>.of(_items); // snapshot before clearing
-      final tendered = _isCash
-          ? (_receivedCents ?? sale.totalCents)
-          : sale.totalCents;
-      final change = _isCash ? tendered - sale.totalCents : 0;
-
       context.read<CartViewModel>().clear();
-
-      context.goNamed(
-        'receipt',
-        extra: {
-          'saleId': sale.saleId,
-          'items': items,
-          'paymentMethod': _methodLabels[_method],
-          'total': sale.totalCents / 100,
-          'amountReceived': tendered / 100,
-          'change': change / 100,
-        },
-      );
+      context.goNamed('receipt', pathParameters: {'saleId': sale.saleId});
     }
   }
 
@@ -150,7 +133,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         .completeSale
         .running;
     // Rebuild when the shared cart changes, in case we're using it.
-    context.watch<CatalogueViewModel>();
+    context.watch<CartViewModel>();
 
     return TabletScaffold(
       child: Padding(
@@ -164,10 +147,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   tooltip: 'Back to cart',
                   onPressed: isProcessing
                       ? null
-                      : () => context.goNamed(
-                          'cart',
-                          extra: List<CartItem>.of(_items),
-                        ),
+                      : () => context.goNamed('cart'),
                   icon: const Icon(Icons.arrow_back),
                 ),
                 const SizedBox(width: 8),
@@ -228,14 +208,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                         .titleMedium,
                                   ),
                                   Text(
-                                    '${item.quantity} × '
-                                    '\$${item.unitPrice.toStringAsFixed(2)}',
+                                    '${item.quantity} × ${_usd(item.unitPriceCents)}',
                                   ),
                                 ],
                               ),
                             ),
                             Text(
-                              '\$${item.total.toStringAsFixed(2)}',
+                              _usd(item.totalCents),
                               style: Theme.of(context).textTheme.titleMedium,
                             ),
                           ],

@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 import 'package:pos_tablet/ui/auth/login_screen.dart';
 import 'package:pos_tablet/ui/cash/cash_movements_screen.dart';
 import 'package:pos_tablet/ui/dashboard/dashboard_screen.dart';
-import 'package:pos_tablet/ui/sales/cart_item.dart';
 import 'package:pos_tablet/ui/sales/cart_screen.dart';
 import 'package:pos_tablet/ui/sales/checkout_screen.dart';
 import 'package:pos_tablet/ui/sales/product_catalogue_screen.dart';
@@ -36,16 +35,16 @@ String? resolveRedirect({
   // Authenticated, local shift check still running: stay put.
   if (shift == ShiftState.unknown) return null;
 
-  final home = shift == ShiftState.open ? dashboardRoute : startShiftRoute;
-  if (onPublic) return home;
+  final hasShift = shift == ShiftState.open;
 
-  if (shift == ShiftState.open && location == startShiftRoute) {
-    return dashboardRoute;
+  if (onPublic) return hasShift ? dashboardRoute : startShiftRoute;
+
+  if (hasShift) {
+    return location == startShiftRoute ? dashboardRoute : null;
   }
-  if (shift == ShiftState.none && location.startsWith(dashboardRoute)) {
-    return startShiftRoute;
-  }
-  return null;
+
+  // No open shift: start-shift is the only place to be.
+  return location == startShiftRoute ? null : startShiftRoute;
 }
 
 GoRouter createRouter(AuthViewModel auth, ShiftViewModel shift) => GoRouter(
@@ -91,18 +90,11 @@ GoRouter createRouter(AuthViewModel auth, ShiftViewModel shift) => GoRouter(
     ),
     GoRoute(
       name: 'receipt',
-      path: '/receipt',
+      path: '/receipt/:saleId',
       builder: (context, state) {
-        final extra = state.extra! as Map<String, dynamic>;
-
-        return ReceiptScreen(
-          saleId: extra['saleId'] as String,
-          items: List<CartItem>.from(extra['items'] as List),
-          paymentMethod: extra['paymentMethod'] as String,
-          total: (extra['total'] as num).toDouble(),
-          amountReceived: (extra['amountReceived'] as num).toDouble(),
-          change: (extra['change'] as num).toDouble(),
-        );
+        final saleId = state.pathParameters['saleId']!;
+        // The key gives each sale its own State, so a new ID never reuses an old view model.
+        return ReceiptScreen(key: ValueKey(saleId), saleId: saleId);
       },
     ),
     GoRoute(

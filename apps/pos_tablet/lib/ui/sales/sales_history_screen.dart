@@ -1,147 +1,97 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:pos_tablet/ui/sales/cart_item.dart';
 import 'package:pos_tablet/ui/sales/viewmodel/sales_history_view_model.dart';
+import 'package:pos_tablet/ui/shared/money.dart';
+import 'package:pos_tablet/ui/shared/sync_badge.dart';
+import 'package:pos_tablet/ui/shared/tablet_scaffold.dart';
 import 'package:provider/provider.dart';
 
-import 'package:pos_tablet/ui/shared/tablet_scaffold.dart';
-import 'package:shared_core/domain/model/sale_history.dart';
-
-class SalesHistoryScreen extends StatelessWidget {
+class SalesHistoryScreen extends StatefulWidget {
   const SalesHistoryScreen({super.key});
 
   @override
+  State<SalesHistoryScreen> createState() => _SalesHistoryScreenState();
+}
+
+class _SalesHistoryScreenState extends State<SalesHistoryScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Sales rung up since this screen was last open appear on entry. If a load
+    // is already running (e.g. the view model was just created), this is a no-op.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) context.read<SalesHistoryViewModel>().loadInitial();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return const _SalesHistoryView();
+    return TabletScaffold(
+      child: const Padding(
+        padding: EdgeInsets.all(24),
+        child: SalesHistoryBody(),
+      ),
+    );
   }
 }
 
-class _SalesHistoryView extends StatelessWidget {
-  const _SalesHistoryView();
+/// The screen's content, separate from the scaffold so it can be tested alone.
+class SalesHistoryBody extends StatefulWidget {
+  const SalesHistoryBody({super.key});
 
-  String _money(int cents) => '\$${(cents / 100).toStringAsFixed(2)}';
+  @override
+  State<SalesHistoryBody> createState() => _SalesHistoryBodyState();
+}
 
-  String _date(DateTime value) {
-    final d = value.toLocal();
-    String two(int n) => n.toString().padLeft(2, '0');
+class _SalesHistoryBodyState extends State<SalesHistoryBody> {
+  late final TextEditingController _search;
 
-    return '${d.year}-${two(d.month)}-${two(d.day)} '
-        '${two(d.hour)}:${two(d.minute)}';
+  @override
+  void initState() {
+    super.initState();
+    // The view model keeps the query across navigation, so the field must too.
+    _search = TextEditingController(
+      text: context.read<SalesHistoryViewModel>().searchQuery,
+    );
   }
 
-  String _paymentLabel(String method) {
-    switch (method) {
-      case 'cash':
-        return 'Cash';
-      case 'ecocash_usd':
-        return 'EcoCash (USD)';
-      case 'bank_transfer_usd':
-        return 'Bank transfer (USD)';
-      default:
-        return method;
-    }
-  }
-
-  Future<void> _openReceipt(
-    BuildContext context,
-    SalesHistoryViewModel vm,
-    SaleHistory sale,
-  ) async {
-    try {
-      final data = await vm.loadReceipt(sale.id);
-      if (!context.mounted) return;
-
-      final saleData = data['sale'] as Map<String, dynamic>;
-      final payment = data['payment'] as Map<String, dynamic>;
-      final rawItems = data['items'] as List<Map<String, dynamic>>;
-
-      final items = rawItems.map((row) {
-        final description = row['variant_description'] as String?;
-        final productName = row['product_name'] as String;
-        final name = description == null || description.trim().isEmpty
-            ? productName
-            : '$productName — $description';
-
-        return CartItem(
-          variantId: row['variant_id'] as String,
-          name: name,
-          quantity: (row['quantity'] as num).toInt(),
-          unitPriceCents: (row['unit_price_cents'] as num).toInt(),
-          availableStock: 24, //todo: to be fixed.
-        );
-      }).toList();
-
-      final method = payment['method'] as String;
-      final amountCents = (payment['amount_cents'] as num).toInt();
-      final tenderedCents =
-          (payment['tendered_cents'] as num?)?.toInt() ?? amountCents;
-      final changeCents = (payment['change_cents'] as num).toInt();
-
-      final labels = {
-        'cash': 'Cash',
-        'ecocash_usd': 'EcoCash (USD)',
-        'bank_transfer_usd': 'Bank transfer (USD)',
-      };
-
-      context.goNamed(
-        'receipt',
-        extra: {
-          'saleId': sale.id,
-          'items': items,
-          'paymentMethod': labels[method] ?? method,
-          'total': (saleData['total_cents'] as num).toInt() / 100,
-          'amountReceived': tenderedCents / 100,
-          'change': changeCents / 100,
-          'createdAt': DateTime.parse(saleData['created_at'] as String),
-        },
-      );
-    } catch (_) {
-      if (!context.mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Could not open this receipt. Check your connection and retry.',
-          ),
-        ),
-      );
-    }
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<SalesHistoryViewModel>();
 
-    return TabletScaffold(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Sales History',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              onChanged: vm.setSearchQuery,
-              decoration: const InputDecoration(
-                prefixIcon: Icon(Icons.search),
-                labelText: 'Search loaded sales',
-                hintText: 'Receipt ID, payment method, status or cents',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Expanded(child: _buildBody(context, vm)),
-          ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Sales History',
+          style: Theme.of(context).textTheme.headlineMedium,
         ),
-      ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: _search,
+          onChanged: vm.setSearchQuery,
+          decoration: const InputDecoration(
+            prefixIcon: Icon(Icons.search),
+            labelText: 'Search loaded sales',
+            hintText: 'Receipt ID, payment method, status or cents',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Expanded(child: _buildBody(context, vm)),
+      ],
     );
   }
 
   Widget _buildBody(BuildContext context, SalesHistoryViewModel vm) {
-    if (vm.isLoading) {
+    // Block the screen only on the very first load. Reloads keep the list visible.
+    if (vm.isLoading && vm.sales.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
 
@@ -155,7 +105,7 @@ class _SalesHistoryView extends StatelessWidget {
       return Center(
         child: Text(
           vm.sales.isEmpty
-              ? 'No sales recorded yet.'
+              ? 'No sales in this shift yet.'
               : 'No sales match your search.',
         ),
       );
@@ -173,21 +123,25 @@ class _SalesHistoryView extends StatelessWidget {
               return ListTile(
                 leading: const CircleAvatar(child: Icon(Icons.receipt_long)),
                 title: Text(
-                  _money(sale.totalCents),
+                  formatUsd(sale.totalCents),
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [],
+                ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('Receipt: ${sale.id}'),
-                    Text(_date(sale.createdAt)),
-                    Text(
-                      '${_paymentLabel(sale.paymentMethod)} • ${sale.status}',
-                    ),
+                    SyncBadge(sale.syncStatus),
+                    const SizedBox(width: 8),
+                    const Icon(Icons.chevron_right),
                   ],
                 ),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => _openReceipt(context, vm, sale),
+                onTap: () => context.goNamed(
+                  'receipt',
+                  pathParameters: {'saleId': sale.id},
+                ),
               );
             },
           ),
@@ -231,7 +185,10 @@ class _ErrorState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.cloud_off, size: 40),
+          const Icon(
+            Icons.error_outline,
+            size: 40,
+          ), // was cloud_off; this is a local read now
           const SizedBox(height: 12),
           Text(message, textAlign: TextAlign.center),
           const SizedBox(height: 12),

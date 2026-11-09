@@ -1,4 +1,5 @@
 import 'package:shared_core/domain/model/sale_line_item.dart';
+import 'package:shared_core/domain/model/sync_status.dart';
 
 class SaleHistory {
   const SaleHistory({
@@ -9,6 +10,7 @@ class SaleHistory {
     required this.createdAt,
     required this.paymentMethod,
     this.items = const [],
+    this.syncStatus = SyncStatus.synced,
   });
 
   final String id;
@@ -18,6 +20,7 @@ class SaleHistory {
   final DateTime createdAt;
   final String paymentMethod;
   final List<SaleLineItem> items;
+  final SyncStatus syncStatus;
 
   factory SaleHistory.fromJson(Map<String, dynamic> json) {
     final rawItems = json['items'] as List<dynamic>? ?? [];

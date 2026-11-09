@@ -7,7 +7,6 @@ import 'package:pos_tablet/data/repository/shift_summary_repo.dart';
 import 'package:pos_tablet/data/repository/stock_repo.dart';
 import 'package:pos_tablet/data/source/catalogue_seeder.dart';
 import 'package:pos_tablet/data/source/product_service.dart';
-import 'package:pos_tablet/data/source/sale_service.dart';
 import 'package:pos_tablet/data/source/shift_service.dart';
 import 'package:pos_tablet/data/source/stock_receiving_service.dart';
 import 'package:shared_core/data/auth_repo.dart';
@@ -23,7 +22,6 @@ class AppDependencies {
   late final ShiftRepository _shiftRepository;
   late final ProductRepository _productRepository;
   late final ProductService _productService;
-  late final SaleService _saleService;
   late final SaleRepository _saleRepository;
   late final StockReceivingService _stockReceivingService;
   late final StockReceivingRepository _stockReceivingRepository;
@@ -55,12 +53,7 @@ class AppDependencies {
     _shiftRepository = ShiftRepositoryImpl(_shiftService, _db.shiftsDao);
     _productService = ProductService(_supabase.client);
     _productRepository = ProductRepositoryImpl(_db.catalogueDao);
-    _saleService = SaleService(_supabase.client);
-    // _saleSyncService = SaleSyncService(
-    //   salesDao: _db.salesDao,
-    //   saleService: _saleService,
-    //   supabaseClient: _supabase.client,
-    // );
+
     _saleRepository = SaleRepositoryImpl(_db.salesDao, _db.shiftsDao);
 
     // _saleSyncService.start();

@@ -127,9 +127,14 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
         ),
       );
 
-  /// Returns recent sales, newest first.
-  Future<List<SalesTableData>> getRecent({int limit = 50, int offset = 0}) =>
+  /// Sales for one shift, newest first. rowid breaks same-second ties.
+  Future<List<SalesTableData>> getByShift(
+    String shiftId, {
+    int limit = 50,
+    int offset = 0,
+  }) =>
       (select(salesTable)
+            ..where((t) => t.shiftId.equals(shiftId))
             ..orderBy([
               (t) => OrderingTerm.desc(t.createdAt),
               (t) => OrderingTerm.desc(const CustomExpression<int>('rowid')),

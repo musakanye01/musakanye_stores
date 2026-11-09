@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pos_tablet/ui/sales/viewmodel/cart_view_model.dart';
+import 'package:pos_tablet/ui/shared/money.dart';
 import 'package:provider/provider.dart';
 
 import '../shared/tablet_scaffold.dart';
@@ -11,6 +12,7 @@ class CartScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<CartViewModel>();
+    final items = vm.items;
 
     return TabletScaffold(
       child: Padding(
@@ -23,7 +25,7 @@ class CartScreen extends StatelessWidget {
               children: [
                 IconButton(
                   tooltip: 'Back to catalogue',
-                  onPressed: () => context.pop(),
+                  onPressed: () => context.goNamed('sales'),
                   icon: const Icon(Icons.arrow_back),
                 ),
                 const SizedBox(width: 8),
@@ -47,10 +49,10 @@ class CartScreen extends StatelessWidget {
               child: vm.isEmpty
                   ? _buildEmptyCart(context)
                   : ListView.separated(
-                      itemCount: vm.itemCount,
+                      itemCount: items.length, // lines, not total quantity
                       separatorBuilder: (_, _) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
-                        final item = vm.items[index];
+                        final item = items[index];
 
                         return Card(
                           child: Padding(
@@ -76,8 +78,7 @@ class CartScreen extends StatelessWidget {
                                             .titleMedium,
                                       ),
                                       const SizedBox(height: 4),
-                                      Text(
-                                        '\$${item.unitPrice.toStringAsFixed(2)} each',
+                                     Text('${formatUsd(item.unitPriceCents)} each',
                                         style: Theme.of(context)
                                             .textTheme
                                             .bodyMedium,
@@ -182,8 +183,8 @@ class CartScreen extends StatelessWidget {
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        '\$${vm.totalCents.toStringAsFixed(2)}',
+                  Text(
+                        formatUsd(vm.totalCents),
                         style: Theme.of(context).textTheme.headlineSmall,
                       ),
                     ],

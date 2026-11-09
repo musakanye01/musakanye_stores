@@ -113,4 +113,109 @@ void main() {
       );
     });
   });
+
+  group('without an open shift', () {
+    const routes = [
+      '/dashboard',
+      '/shift',
+      '/sales',
+      '/sales-history',
+      '/cart',
+      '/checkout',
+      '/receipt',
+      '/receipt/abc',
+      '/cash-movements',
+      '/stock-receiving',
+      '/some-route-added-later',
+    ];
+
+    test('every route redirects to start-shift', () {
+      for (final route in routes) {
+        expect(
+          redirect(AuthStatus.authenticated, ShiftState.none, route),
+          startShiftRoute,
+          reason: route,
+        );
+      }
+    });
+
+    test('start-shift itself stays put', () {
+      expect(
+        redirect(AuthStatus.authenticated, ShiftState.none, startShiftRoute),
+        isNull,
+      );
+    });
+
+    test(
+      '/sales-history is not mistaken for /sales or the other way round',
+      () {
+        expect(
+          redirect(AuthStatus.authenticated, ShiftState.open, '/sales-history'),
+          isNull,
+        );
+        expect(
+          redirect(AuthStatus.authenticated, ShiftState.open, '/sales'),
+          isNull,
+        );
+      },
+    );
+  });
+
+  group('with an open shift', () {
+    test('every route stays reachable', () {
+      for (final route in [
+        '/dashboard',
+        '/shift',
+        '/sales',
+        '/sales-history',
+        '/cart',
+        '/checkout',
+        '/receipt/abc',
+        '/some-route-added-later',
+      ]) {
+        expect(
+          redirect(AuthStatus.authenticated, ShiftState.open, route),
+          isNull,
+          reason: route,
+        );
+      }
+    });
+
+    test('start-shift and login go to the dashboard', () {
+      expect(
+        redirect(AuthStatus.authenticated, ShiftState.open, startShiftRoute),
+        dashboardRoute,
+      );
+      expect(
+        redirect(AuthStatus.authenticated, ShiftState.open, loginRoute),
+        dashboardRoute,
+      );
+    });
+  });
+
+  test('while the shift state is loading, nothing redirects', () {
+    for (final route in ['/dashboard', '/sales', '/sales-history', '/shift']) {
+      expect(
+        redirect(AuthStatus.authenticated, ShiftState.unknown, route),
+        isNull,
+        reason: route,
+      );
+    }
+  });
+
+  test('unauthenticated users are sent to login from every route', () {
+    for (final route in [
+      '/dashboard',
+      '/sales',
+      '/sales-history',
+      '/shift',
+      '/cart',
+    ]) {
+      expect(
+        redirect(AuthStatus.unauthenticated, ShiftState.none, route),
+        loginRoute,
+        reason: route,
+      );
+    }
+  });
 }

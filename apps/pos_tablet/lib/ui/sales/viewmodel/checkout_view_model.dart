@@ -49,7 +49,7 @@ class CheckoutViewModel extends ChangeNotifier {
               (item) => SaleLine(
                 variantId: item.variantId,
                 quantity: item.quantity,
-                unitPriceCents: (item.unitPrice * 100).round(),
+               unitPriceCents: item.unitPriceCents,
               ),
             )
             .toList()

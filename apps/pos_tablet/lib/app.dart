@@ -43,11 +43,12 @@ class PosTabletApp extends StatelessWidget {
               StockReceivingViewModel(dependencies.stockReceivingRepository),
         ),
 
-        ChangeNotifierProvider<SalesHistoryViewModel>(
-          create: (_) =>
-              SalesHistoryViewModel(dependencies.saleRepository)..loadInitial(),
+    ChangeNotifierProvider<SalesHistoryViewModel>(
+          create: (ctx) => SalesHistoryViewModel(
+            dependencies.saleRepository,
+            ctx.read<ShiftViewModel>(),
+          ),
         ),
-
         ChangeNotifierProvider<CartViewModel>(create: (_) => CartViewModel()),
 
         ChangeNotifierProvider<ShiftSummaryViewModel>(

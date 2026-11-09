@@ -4,13 +4,20 @@ import 'package:pos_tablet/data/repository/shift_repo.dart';
 import 'package:shared_core/domain/model/shift.dart';
 import 'package:shared_core/util/result.dart';
 
-import '../model/fake_shift.dart';
+Shift shiftFixture(String id, [int openingFloatCents = 1000]) => Shift(
+  id: id,
+  cashierId: 'cashier-1',
+  openingFloatCents: openingFloatCents,
+  status: 'open',
+  openedAt: DateTime.utc(2026, 11, 4, 8),
+  deviceId: 'device-1',
+);
 
 class FakeShiftRepository implements ShiftRepository {
   Result<Shift?> openShiftResult = const Result.ok(null);
   Result<Shift>? startResult;
   Result<void> closeResult = const Result.ok(null);
-  Completer<Result<void>>? closeGate; // lets a test hold the close in flight
+  Completer<Result<void>>? closeGate; // lets a test hold a close in flight
 
   int getOpenShiftCalls = 0;
   int closeCalls = 0;
@@ -25,7 +32,7 @@ class FakeShiftRepository implements ShiftRepository {
   Future<Result<Shift>> startShift({
     required int openingFloatCents,
     String? deviceId,
-  }) async => startResult ?? Result.ok(fakeShift('new', openingFloatCents));
+  }) async => startResult ?? Result.ok(shiftFixture('new', openingFloatCents));
 
   @override
   Future<Result<void>> closeShift({

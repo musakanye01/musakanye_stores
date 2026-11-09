@@ -1,9 +1,12 @@
 import 'package:pos_tablet/data/local/app_database.dart';
+import 'package:pos_tablet/data/local/dao/catalogue_dao.dart';
 import 'package:pos_tablet/data/local/dao/sales_dao.dart';
 import 'package:pos_tablet/data/local/dao/shifts_dao.dart';
 import 'package:shared_core/domain/model/sale_history.dart';
 import 'package:shared_core/domain/model/sale_line.dart';
+import 'package:shared_core/domain/model/sync_status.dart';
 import 'package:shared_core/util/result.dart';
+import 'package:shared_core/domain/model/sale_receipt.dart';
 import 'package:uuid/uuid.dart';
 
 abstract class SaleRepository {
@@ -16,9 +19,15 @@ abstract class SaleRepository {
     required int tenderedCents,
   });
 
-  Future<List<SaleHistory>> getSalesHistory({int offset = 0, int limit = 50});
+  Future<List<SaleHistory>> getSalesHistory({
+    required String shiftId,
+    int offset = 0,
+    int limit = 50,
+  });
 
-  Future<Map<String, dynamic>> getSaleReceipt(String saleId);
+
+// interface
+  Future<SaleReceipt?> getSaleReceipt(String saleId);
 }
 
 class SaleRepositoryImpl implements SaleRepository {
@@ -118,61 +127,51 @@ class SaleRepositoryImpl implements SaleRepository {
     }
   }
 
-  @override
-  Future<List<SaleHistory>> getSalesHistory({
-    int offset = 0,
-    int limit = 50,
-  }) async {
-    final rows = await _salesDao.getRecent(limit: limit, offset: offset);
-    return [
-      for (final s in rows)
-        SaleHistory.fromJson({
-          'id': s.id,
-          'cashier_id': '', // not stored on the sale; single cashier per device
-          'total_cents': s.totalCents,
-          'status': 'completed',
-          'created_at': s.createdAt.toIso8601String(),
-          'payment_method': s.paymentMethod,
-        }),
-    ];
-  }
+@override
+Future<List<SaleHistory>> getSalesHistory({
+  required String shiftId,
+  int offset = 0,
+  int limit = 50,
+}) async {
+  final rows = await _salesDao.getByShift(shiftId, limit: limit, offset: offset);
+  return [
+    for (final s in rows)
+      SaleHistory(
+        id: s.id,
+        cashierId: '',
+        totalCents: s.totalCents,
+        status: 'completed',
+        createdAt: s.createdAt,
+        paymentMethod: s.paymentMethod,
+        syncStatus: syncStatusOf(synced: s.synced, syncError: s.syncError),
+      ),
+  ];
+}
 
-  @override
-  Future<Map<String, dynamic>> getSaleReceipt(String saleId) async {
-    final sale = await _salesDao.getSaleById(saleId);
-    if (sale == null) {
-      throw StateError('This sale was not found on this device.');
-    }
+@override
+Future<SaleReceipt?> getSaleReceipt(String saleId) async {
+  final sale = await _salesDao.getSaleById(saleId);
+  if (sale == null) return null;
 
-    final rows = await _salesDao.getLinesWithProducts(saleId);
-    final isCash = sale.paymentMethod == 'cash';
+  final rows = await _salesDao.getLinesWithProducts(saleId);
 
-    // Same shape the receipt screen already reads, so it needs no changes.
-    return {
-      'sale': {
-        'id': sale.id,
-        'total_cents': sale.totalCents,
-        'created_at': sale.createdAt.toIso8601String(),
-        'status': 'completed',
-      },
-      'items': [
-        for (final r in rows)
-          {
-            'variant_id': r.line.variantId,
-            'product_name': r.product?.productName ?? 'Unknown item',
-            'variant_description':
-                null, // add size/colour if the catalogue has it
-            'quantity': r.line.quantity,
-            'unit_price_cents': r.line.unitPriceCents,
-            'line_total_cents': r.line.unitPriceCents * r.line.quantity,
-          },
-      ],
-      'payment': {
-        'method': sale.paymentMethod,
-        'amount_cents': sale.totalCents,
-        'tendered_cents': sale.tenderedCents,
-        'change_cents': isCash ? sale.tenderedCents - sale.totalCents : 0,
-      },
-    };
-  }
+  return SaleReceipt(
+    saleId: sale.id,
+    createdAt: sale.createdAt,
+    paymentMethod: sale.paymentMethod,
+    totalCents: sale.totalCents,
+    tenderedCents: sale.tenderedCents,
+    syncStatus: syncStatusOf(synced: sale.synced, syncError: sale.syncError),
+    lines: [
+      for (final r in rows)
+        ReceiptLine(
+          name: r.product == null
+              ? 'Unknown item'
+              : CatalogueDao.toDomain(r.product!).displayName,
+          quantity: r.line.quantity,
+          unitPriceCents: r.line.unitPriceCents,
+        ),
+    ],
+  );
+}
 }

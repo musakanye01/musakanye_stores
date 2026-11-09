@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pos_tablet/data/local/app_database.dart';
 import 'package:pos_tablet/data/repository/sale_repo.dart';
 import 'package:shared_core/domain/model/sale_line.dart';
+import 'package:shared_core/domain/model/sync_status.dart';
 import 'package:shared_core/util/result.dart';
 
 // plus your project imports
@@ -107,23 +108,113 @@ void main() {
     expect(await stock(), 8);
   });
 
-  test('history comes from local data, newest first', () async {
+test('history comes from local data, newest first', () async {
     await sell(id: 'a');
     await Future<void>.delayed(const Duration(milliseconds: 5));
     await sell(id: 'b');
 
-    final history = await repo.getSalesHistory();
+    final history = await repo.getSalesHistory(shiftId: 'shift-1');
     expect(history.map((h) => h.id), ['b', 'a']);
   });
 
-  test('receipt is built locally with correct change', () async {
+  test('history only contains the requested shift', () async {
+    await db.shiftsDao.upsertShift(
+      ShiftsTableCompanion.insert(
+        id: 'shift-2',
+        cashierId: 'c1',
+        status: 'open',
+        openingFloatCents: 0,
+        idempotencyKey: 'shift-2',
+        openedAt: DateTime.utc(2026, 11, 5, 9),
+      ),
+    );
+
+    await sell(id: 'a', qty: 1);
+    await sell(id: 'b', qty: 1, shiftId: 'shift-2');
+
+    expect((await repo.getSalesHistory(shiftId: 'shift-1')).map((h) => h.id), [
+      'a',
+    ]);
+    expect((await repo.getSalesHistory(shiftId: 'shift-2')).map((h) => h.id), [
+      'b',
+    ]);
+    expect(await repo.getSalesHistory(shiftId: 'nope'), isEmpty);
+  });
+
+  test('paging is stable even when sales share the same second', () async {
+    for (final id in ['a', 'b', 'c', 'd', 'e']) {
+      await sell(id: id, qty: 1); // all land within one second
+    }
+
+    final page1 = await repo.getSalesHistory(
+      shiftId: 'shift-1',
+      limit: 2,
+      offset: 0,
+    );
+    final page2 = await repo.getSalesHistory(
+      shiftId: 'shift-1',
+      limit: 2,
+      offset: 2,
+    );
+    final page3 = await repo.getSalesHistory(
+      shiftId: 'shift-1',
+      limit: 2,
+      offset: 4,
+    );
+
+    expect(page1.map((h) => h.id), ['e', 'd']);
+    expect(page2.map((h) => h.id), ['c', 'b']);
+    expect(page3.map((h) => h.id), ['a']);
+  });
+test('receipt is built locally with correct change', () async {
     await sell(tendered: 1500);
 
     final receipt = await repo.getSaleReceipt('sale-1');
-    expect(receipt['sale']['total_cents'], 1000);
-    expect(receipt['payment']['change_cents'], 500);
-    final items = receipt['items'] as List;
-    expect(items.single['product_name'], 'Shirt');
-    expect(items.single['line_total_cents'], 1000);
+    expect(receipt, isNotNull);
+    expect(receipt!.totalCents, 1000);
+    expect(receipt.tenderedCents, 1500);
+    expect(receipt.changeCents, 500);
+    expect(receipt.lines.single.name, contains('Shirt'));
+    expect(receipt.lines.single.totalCents, 1000);
+  });
+
+  test('EcoCash receipt has no change', () async {
+    await sell(method: 'ecocash_usd', tendered: 0);
+
+    final receipt = await repo.getSaleReceipt('sale-1');
+    expect(receipt!.isCash, isFalse);
+    expect(receipt.changeCents, 0);
+  });
+
+  test('receipt for an unknown sale is null', () async {
+    expect(await repo.getSaleReceipt('nope'), isNull);
+  });
+
+  test('a product removed from the catalogue shows as Unknown item', () async {
+    await sell();
+    await db.delete(db.catalogueTable).go();
+
+    final receipt = await repo.getSaleReceipt('sale-1');
+    expect(receipt!.lines.single.name, 'Unknown item');
+  });
+
+  test('history rows and receipts carry their sync status', () async {
+    await sell(id: 'a');
+    await sell(id: 'b');
+    await sell(id: 'c');
+    await db.salesDao.markSynced('a');
+    await db.salesDao.markSyncFailed('b', 'rejected');
+
+    final byId = {
+      for (final h in await repo.getSalesHistory(shiftId: 'shift-1'))
+        h.id: h.syncStatus,
+    };
+    expect(byId, {
+      'a': SyncStatus.synced,
+      'b': SyncStatus.failed,
+      'c': SyncStatus.pending,
+    });
+
+    expect((await repo.getSaleReceipt('b'))!.syncStatus, SyncStatus.failed);
   });
 }
