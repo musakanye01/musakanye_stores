@@ -108,7 +108,7 @@ void main() {
     expect(await stock(), 8);
   });
 
-test('history comes from local data, newest first', () async {
+  test('history comes from local data, newest first', () async {
     await sell(id: 'a');
     await Future<void>.delayed(const Duration(milliseconds: 5));
     await sell(id: 'b');
@@ -166,7 +166,7 @@ test('history comes from local data, newest first', () async {
     expect(page2.map((h) => h.id), ['c', 'b']);
     expect(page3.map((h) => h.id), ['a']);
   });
-test('receipt is built locally with correct change', () async {
+  test('receipt is built locally with correct change', () async {
     await sell(tendered: 1500);
 
     final receipt = await repo.getSaleReceipt('sale-1');

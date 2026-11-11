@@ -24,9 +24,6 @@ Future<void> main() async {
       url: supabaseUrl,
       publishableKey: supabaseAnonKey,
     );
-  } catch (error, stackTrace) {
-    debugPrint('Error initializing app: $error');
-    debugPrint('Stacktrace: $stackTrace');
     final deps = await AppDependencies.initialize();
     runApp(
       ChangeNotifierProvider(
@@ -34,5 +31,8 @@ Future<void> main() async {
         child: PosTabletApp(dependencies: deps),
       ),
     );
+  } catch (error, stackTrace) {
+    debugPrint('Error initializing app: $error');
+    debugPrint('Stacktrace: $stackTrace');
   }
 }

@@ -30,9 +30,19 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 4;
 
   static QueryExecutor _openConnection() {
     return driftDatabase(name: 'pos_database');
+  }
+
+  @override
+  MigrationStrategy get migration {
+    return MigrationStrategy(
+      onCreate: (migrator) async {
+        await migrator.createAll();
+      },
+      onUpgrade: (migrator, from, to) async {},
+    );
   }
 }

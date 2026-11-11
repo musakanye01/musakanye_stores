@@ -6,7 +6,7 @@ import 'package:pos_tablet/ui/shifts/shift_view_model.dart';
 import 'package:provider/provider.dart';
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key});
+  DashboardScreen({super.key});
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -34,6 +34,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final shiftViewModel = context.watch<ShiftViewModel>();
+    final shiftSummaryViewModel = context.watch<ShiftSummaryViewModel>();
     final shift = shiftViewModel.currentShift;
     final isLoadingShift = shiftViewModel.startShift.running;
 
@@ -82,10 +83,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                     _SummaryItem(
                       label: 'Sales today',
-                      value: context
-                          .watch<ShiftSummaryViewModel>()
-                          .summary
-                          .salesCount
+                      value: shiftSummaryViewModel.summary.salesCount
                           .toString(),
                       icon: Icons.point_of_sale_outlined,
                     ),

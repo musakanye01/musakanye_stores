@@ -25,8 +25,7 @@ abstract class SaleRepository {
     int limit = 50,
   });
 
-
-// interface
+  // interface
   Future<SaleReceipt?> getSaleReceipt(String saleId);
 }
 
@@ -127,51 +126,55 @@ class SaleRepositoryImpl implements SaleRepository {
     }
   }
 
-@override
-Future<List<SaleHistory>> getSalesHistory({
-  required String shiftId,
-  int offset = 0,
-  int limit = 50,
-}) async {
-  final rows = await _salesDao.getByShift(shiftId, limit: limit, offset: offset);
-  return [
-    for (final s in rows)
-      SaleHistory(
-        id: s.id,
-        cashierId: '',
-        totalCents: s.totalCents,
-        status: 'completed',
-        createdAt: s.createdAt,
-        paymentMethod: s.paymentMethod,
-        syncStatus: syncStatusOf(synced: s.synced, syncError: s.syncError),
-      ),
-  ];
-}
-
-@override
-Future<SaleReceipt?> getSaleReceipt(String saleId) async {
-  final sale = await _salesDao.getSaleById(saleId);
-  if (sale == null) return null;
-
-  final rows = await _salesDao.getLinesWithProducts(saleId);
-
-  return SaleReceipt(
-    saleId: sale.id,
-    createdAt: sale.createdAt,
-    paymentMethod: sale.paymentMethod,
-    totalCents: sale.totalCents,
-    tenderedCents: sale.tenderedCents,
-    syncStatus: syncStatusOf(synced: sale.synced, syncError: sale.syncError),
-    lines: [
-      for (final r in rows)
-        ReceiptLine(
-          name: r.product == null
-              ? 'Unknown item'
-              : CatalogueDao.toDomain(r.product!).displayName,
-          quantity: r.line.quantity,
-          unitPriceCents: r.line.unitPriceCents,
+  @override
+  Future<List<SaleHistory>> getSalesHistory({
+    required String shiftId,
+    int offset = 0,
+    int limit = 50,
+  }) async {
+    final rows = await _salesDao.getByShift(
+      shiftId,
+      limit: limit,
+      offset: offset,
+    );
+    return [
+      for (final s in rows)
+        SaleHistory(
+          id: s.id,
+          cashierId: '',
+          totalCents: s.totalCents,
+          status: 'completed',
+          createdAt: s.createdAt,
+          paymentMethod: s.paymentMethod,
+          syncStatus: syncStatusOf(synced: s.synced, syncError: s.syncError),
         ),
-    ],
-  );
-}
+    ];
+  }
+
+  @override
+  Future<SaleReceipt?> getSaleReceipt(String saleId) async {
+    final sale = await _salesDao.getSaleById(saleId);
+    if (sale == null) return null;
+
+    final rows = await _salesDao.getLinesWithProducts(saleId);
+
+    return SaleReceipt(
+      saleId: sale.id,
+      createdAt: sale.createdAt,
+      paymentMethod: sale.paymentMethod,
+      totalCents: sale.totalCents,
+      tenderedCents: sale.tenderedCents,
+      syncStatus: syncStatusOf(synced: sale.synced, syncError: sale.syncError),
+      lines: [
+        for (final r in rows)
+          ReceiptLine(
+            name: r.product == null
+                ? 'Unknown item'
+                : CatalogueDao.toDomain(r.product!).displayName,
+            quantity: r.line.quantity,
+            unitPriceCents: r.line.unitPriceCents,
+          ),
+      ],
+    );
+  }
 }
