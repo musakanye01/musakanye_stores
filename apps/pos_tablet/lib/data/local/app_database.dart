@@ -1,9 +1,11 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
+import 'package:pos_tablet/data/local/dao/bootstrap_dao.dart';
 import 'package:pos_tablet/data/local/dao/catalogue_dao.dart';
 import 'package:pos_tablet/data/local/dao/sales_dao.dart';
 import 'package:pos_tablet/data/local/dao/shifts_dao.dart';
 import 'package:pos_tablet/data/local/dao/stock_receipts_dao.dart';
+import 'package:pos_tablet/data/local/tables/bootstrap_table.dart';
 import 'package:pos_tablet/data/local/tables/catalogue_table.dart';
 import 'package:pos_tablet/data/local/tables/sale_lines_table.dart';
 import 'package:pos_tablet/data/local/tables/sales_table.dart';
@@ -20,8 +22,9 @@ part 'app_database.g.dart';
     SaleLinesTable,
     CatalogueTable,
     StockReceiptsTable,
+    BootstrapState,
   ],
-  daos: [ShiftsDao, SalesDao, CatalogueDao, StockReceiptsDao],
+  daos: [ShiftsDao, SalesDao, CatalogueDao, StockReceiptsDao, BootstrapDao],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());

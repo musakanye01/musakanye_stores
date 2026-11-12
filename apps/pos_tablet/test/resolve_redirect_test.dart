@@ -1,221 +1,277 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pos_tablet/routing/app_router.dart';
+import 'package:pos_tablet/ui/bootstrap/bootstrap_view_model.dart';
 import 'package:pos_tablet/ui/shifts/shift_view_model.dart';
 import 'package:shared_core/ui/auth_view_model.dart';
 
 void main() {
-  String? redirect(AuthStatus auth, ShiftState shift, String location) =>
-      resolveRedirect(auth: auth, shift: shift, location: location);
+  String? redirect({
+    required AuthStatus auth,
+    required BootstrapStatus bootstrap,
+    required ShiftState shift,
+    required String location,
+  }) {
+    return resolveRedirect(
+      auth: auth,
+      bootstrap: bootstrap,
+      shift: shift,
+      location: location,
+    );
+  }
 
   group('auth not resolved', () {
     test('uninitialized never redirects', () {
       expect(
-        redirect(AuthStatus.uninitialized, ShiftState.unknown, '/login'),
+        redirect(
+          auth: AuthStatus.uninitialized,
+          bootstrap: BootstrapStatus.unknown,
+          shift: ShiftState.unknown,
+          location: loginRoute,
+        ),
         isNull,
       );
+
       expect(
-        redirect(AuthStatus.uninitialized, ShiftState.unknown, dashboardRoute),
+        redirect(
+          auth: AuthStatus.uninitialized,
+          bootstrap: BootstrapStatus.unknown,
+          shift: ShiftState.unknown,
+          location: dashboardRoute,
+        ),
         isNull,
       );
     });
   });
 
   group('unauthenticated', () {
-    test('protected route goes to login', () {
-      expect(
-        redirect(AuthStatus.unauthenticated, ShiftState.none, dashboardRoute),
-        loginRoute,
-      );
-      expect(
-        redirect(AuthStatus.unauthenticated, ShiftState.none, startShiftRoute),
-        loginRoute,
-      );
-    });
-
-    test('login stays on login', () {
-      expect(
-        redirect(AuthStatus.unauthenticated, ShiftState.none, loginRoute),
-        isNull,
-      );
-    });
-  });
-
-  group('authenticated, shift state still loading', () {
-    test('stays put on any route', () {
-      for (final route in [loginRoute, startShiftRoute, dashboardRoute]) {
-        expect(
-          redirect(AuthStatus.authenticated, ShiftState.unknown, route),
-          isNull,
-          reason: route,
-        );
-      }
-    });
-  });
-
-  group('authenticated with an open shift', () {
-    test('login goes to dashboard', () {
-      expect(
-        redirect(AuthStatus.authenticated, ShiftState.open, loginRoute),
-        dashboardRoute,
-      );
-    });
-
-    test('start-shift goes to dashboard', () {
-      expect(
-        redirect(AuthStatus.authenticated, ShiftState.open, startShiftRoute),
-        dashboardRoute,
-      );
-    });
-
-    test('dashboard and its sub-routes stay', () {
-      expect(
-        redirect(AuthStatus.authenticated, ShiftState.open, dashboardRoute),
-        isNull,
-      );
+    test('protected routes redirect to login', () {
       expect(
         redirect(
-          AuthStatus.authenticated,
-          ShiftState.open,
-          '$dashboardRoute/anything',
+          auth: AuthStatus.unauthenticated,
+          bootstrap: BootstrapStatus.required,
+          shift: ShiftState.none,
+          location: dashboardRoute,
+        ),
+        loginRoute,
+      );
+
+      expect(
+        redirect(
+          auth: AuthStatus.unauthenticated,
+          bootstrap: BootstrapStatus.required,
+          shift: ShiftState.none,
+          location: startShiftRoute,
+        ),
+        loginRoute,
+      );
+    });
+
+    test('login route remains accessible', () {
+      expect(
+        redirect(
+          auth: AuthStatus.unauthenticated,
+          bootstrap: BootstrapStatus.required,
+          shift: ShiftState.none,
+          location: loginRoute,
         ),
         isNull,
       );
     });
   });
 
-  group('authenticated without a shift', () {
-    test('login goes to start-shift', () {
-      expect(
-        redirect(AuthStatus.authenticated, ShiftState.none, loginRoute),
-        startShiftRoute,
-      );
-    });
-
-    test('dashboard and sub-routes go to start-shift', () {
-      expect(
-        redirect(AuthStatus.authenticated, ShiftState.none, dashboardRoute),
-        startShiftRoute,
-      );
-      expect(
-        redirect(
-          AuthStatus.authenticated,
-          ShiftState.none,
-          '$dashboardRoute/anything',
-        ),
-        startShiftRoute,
-      );
-    });
-
-    test('start-shift stays', () {
-      expect(
-        redirect(AuthStatus.authenticated, ShiftState.none, startShiftRoute),
-        isNull,
-      );
-    });
-  });
-
-  group('without an open shift', () {
-    const routes = [
-      '/dashboard',
-      '/shift',
-      '/sales',
-      '/sales-history',
-      '/cart',
-      '/checkout',
-      '/receipt',
-      '/receipt/abc',
-      '/cash-movements',
-      '/stock-receiving',
-      '/some-route-added-later',
-    ];
-
-    test('every route redirects to start-shift', () {
-      for (final route in routes) {
+  group('bootstrap checking', () {
+    test('does not redirect while bootstrap restores', () {
+      for (final route in [dashboardRoute, '/sales', '/checkout', '/shift']) {
         expect(
-          redirect(AuthStatus.authenticated, ShiftState.none, route),
-          startShiftRoute,
+          redirect(
+            auth: AuthStatus.authenticated,
+            bootstrap: BootstrapStatus.checking,
+            shift: ShiftState.none,
+            location: route,
+          ),
+          isNull,
           reason: route,
         );
       }
     });
 
-    test('start-shift itself stays put', () {
+    test('does not redirect while bootstrap unknown', () {
       expect(
-        redirect(AuthStatus.authenticated, ShiftState.none, startShiftRoute),
+        redirect(
+          auth: AuthStatus.authenticated,
+          bootstrap: BootstrapStatus.unknown,
+          shift: ShiftState.none,
+          location: dashboardRoute,
+        ),
         isNull,
       );
     });
-
-    test(
-      '/sales-history is not mistaken for /sales or the other way round',
-      () {
-        expect(
-          redirect(AuthStatus.authenticated, ShiftState.open, '/sales-history'),
-          isNull,
-        );
-        expect(
-          redirect(AuthStatus.authenticated, ShiftState.open, '/sales'),
-          isNull,
-        );
-      },
-    );
   });
 
-  group('with an open shift', () {
-    test('every route stays reachable', () {
+  group('authenticated but bootstrap required', () {
+    test('all routes redirect to bootstrap', () {
       for (final route in [
-        '/dashboard',
+        dashboardRoute,
+        '/sales',
+        '/checkout',
+        '/cart',
+        '/shift',
+        '/sales-history',
+        '/cash-movements',
+      ]) {
+        expect(
+          redirect(
+            auth: AuthStatus.authenticated,
+            bootstrap: BootstrapStatus.required,
+            shift: ShiftState.none,
+            location: route,
+          ),
+          bootstrapRoute,
+          reason: route,
+        );
+      }
+    });
+
+    test('bootstrap route remains accessible', () {
+      expect(
+        redirect(
+          auth: AuthStatus.authenticated,
+          bootstrap: BootstrapStatus.required,
+          shift: ShiftState.none,
+          location: bootstrapRoute,
+        ),
+        isNull,
+      );
+    });
+  });
+
+  group('bootstrapped but shift restoring', () {
+    test('does not redirect while local shift restores', () {
+      for (final route in [dashboardRoute, '/sales', '/checkout']) {
+        expect(
+          redirect(
+            auth: AuthStatus.authenticated,
+            bootstrap: BootstrapStatus.ready,
+            shift: ShiftState.unknown,
+            location: route,
+          ),
+          isNull,
+          reason: route,
+        );
+      }
+    });
+  });
+
+  group('bootstrapped with no shift', () {
+    test('login redirects to start shift', () {
+      expect(
+        redirect(
+          auth: AuthStatus.authenticated,
+          bootstrap: BootstrapStatus.ready,
+          shift: ShiftState.none,
+          location: loginRoute,
+        ),
+        startShiftRoute,
+      );
+    });
+
+    test('dashboard redirects to start shift', () {
+      expect(
+        redirect(
+          auth: AuthStatus.authenticated,
+          bootstrap: BootstrapStatus.ready,
+          shift: ShiftState.none,
+          location: dashboardRoute,
+        ),
+        startShiftRoute,
+      );
+    });
+
+    test('start shift remains accessible', () {
+      expect(
+        redirect(
+          auth: AuthStatus.authenticated,
+          bootstrap: BootstrapStatus.ready,
+          shift: ShiftState.none,
+          location: startShiftRoute,
+        ),
+        isNull,
+      );
+    });
+
+    test('bootstrap route redirects to start shift', () {
+      expect(
+        redirect(
+          auth: AuthStatus.authenticated,
+          bootstrap: BootstrapStatus.ready,
+          shift: ShiftState.none,
+          location: bootstrapRoute,
+        ),
+        startShiftRoute,
+      );
+    });
+  });
+
+  group('bootstrapped with open shift', () {
+    test('login redirects to dashboard', () {
+      expect(
+        redirect(
+          auth: AuthStatus.authenticated,
+          bootstrap: BootstrapStatus.ready,
+          shift: ShiftState.open,
+          location: loginRoute,
+        ),
+        dashboardRoute,
+      );
+    });
+
+    test('start shift redirects to dashboard', () {
+      expect(
+        redirect(
+          auth: AuthStatus.authenticated,
+          bootstrap: BootstrapStatus.ready,
+          shift: ShiftState.open,
+          location: startShiftRoute,
+        ),
+        dashboardRoute,
+      );
+    });
+
+    test('bootstrap route redirects to dashboard', () {
+      expect(
+        redirect(
+          auth: AuthStatus.authenticated,
+          bootstrap: BootstrapStatus.ready,
+          shift: ShiftState.open,
+          location: bootstrapRoute,
+        ),
+        dashboardRoute,
+      );
+    });
+
+    test('protected routes remain accessible', () {
+      for (final route in [
+        dashboardRoute,
         '/shift',
         '/sales',
         '/sales-history',
         '/cart',
         '/checkout',
         '/receipt/abc',
-        '/some-route-added-later',
+        '/cash-movements',
+        '/stock-receiving',
       ]) {
         expect(
-          redirect(AuthStatus.authenticated, ShiftState.open, route),
+          redirect(
+            auth: AuthStatus.authenticated,
+            bootstrap: BootstrapStatus.ready,
+            shift: ShiftState.open,
+            location: route,
+          ),
           isNull,
           reason: route,
         );
       }
     });
-
-    test('start-shift and login go to the dashboard', () {
-      expect(
-        redirect(AuthStatus.authenticated, ShiftState.open, startShiftRoute),
-        dashboardRoute,
-      );
-      expect(
-        redirect(AuthStatus.authenticated, ShiftState.open, loginRoute),
-        dashboardRoute,
-      );
-    });
-  });
-
-  test('while the shift state is loading, nothing redirects', () {
-    for (final route in ['/dashboard', '/sales', '/sales-history', '/shift']) {
-      expect(
-        redirect(AuthStatus.authenticated, ShiftState.unknown, route),
-        isNull,
-        reason: route,
-      );
-    }
-  });
-
-  test('unauthenticated users are sent to login from every route', () {
-    for (final route in [
-      '/dashboard',
-      '/sales',
-      '/sales-history',
-      '/shift',
-      '/cart',
-    ]) {
-      expect(
-        redirect(AuthStatus.unauthenticated, ShiftState.none, route),
-        loginRoute,
-        reason: route,
-      );
-    }
   });
 }

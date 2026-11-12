@@ -3092,6 +3092,333 @@ class StockReceiptsTableCompanion
   }
 }
 
+class $BootstrapStateTable extends BootstrapState
+    with TableInfo<$BootstrapStateTable, BootstrapStateData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $BootstrapStateTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _completedAtMeta = const VerificationMeta(
+    'completedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> completedAt = GeneratedColumn<DateTime>(
+    'completed_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lastRefreshAtMeta = const VerificationMeta(
+    'lastRefreshAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastRefreshAt =
+      GeneratedColumn<DateTime>(
+        'last_refresh_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _bootstrapVersionMeta = const VerificationMeta(
+    'bootstrapVersion',
+  );
+  @override
+  late final GeneratedColumn<String> bootstrapVersion = GeneratedColumn<String>(
+    'bootstrap_version',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    completedAt,
+    lastRefreshAt,
+    bootstrapVersion,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'bootstrap_state';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<BootstrapStateData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('completed_at')) {
+      context.handle(
+        _completedAtMeta,
+        completedAt.isAcceptableOrUnknown(
+          data['completed_at']!,
+          _completedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_refresh_at')) {
+      context.handle(
+        _lastRefreshAtMeta,
+        lastRefreshAt.isAcceptableOrUnknown(
+          data['last_refresh_at']!,
+          _lastRefreshAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('bootstrap_version')) {
+      context.handle(
+        _bootstrapVersionMeta,
+        bootstrapVersion.isAcceptableOrUnknown(
+          data['bootstrap_version']!,
+          _bootstrapVersionMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  BootstrapStateData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return BootstrapStateData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      completedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}completed_at'],
+      ),
+      lastRefreshAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_refresh_at'],
+      ),
+      bootstrapVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bootstrap_version'],
+      ),
+    );
+  }
+
+  @override
+  $BootstrapStateTable createAlias(String alias) {
+    return $BootstrapStateTable(attachedDatabase, alias);
+  }
+}
+
+class BootstrapStateData extends DataClass
+    implements Insertable<BootstrapStateData> {
+  final int id;
+  final DateTime? completedAt;
+  final DateTime? lastRefreshAt;
+  final String? bootstrapVersion;
+  const BootstrapStateData({
+    required this.id,
+    this.completedAt,
+    this.lastRefreshAt,
+    this.bootstrapVersion,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    if (!nullToAbsent || completedAt != null) {
+      map['completed_at'] = Variable<DateTime>(completedAt);
+    }
+    if (!nullToAbsent || lastRefreshAt != null) {
+      map['last_refresh_at'] = Variable<DateTime>(lastRefreshAt);
+    }
+    if (!nullToAbsent || bootstrapVersion != null) {
+      map['bootstrap_version'] = Variable<String>(bootstrapVersion);
+    }
+    return map;
+  }
+
+  BootstrapStateCompanion toCompanion(bool nullToAbsent) {
+    return BootstrapStateCompanion(
+      id: Value(id),
+      completedAt: completedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(completedAt),
+      lastRefreshAt: lastRefreshAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastRefreshAt),
+      bootstrapVersion: bootstrapVersion == null && nullToAbsent
+          ? const Value.absent()
+          : Value(bootstrapVersion),
+    );
+  }
+
+  factory BootstrapStateData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return BootstrapStateData(
+      id: serializer.fromJson<int>(json['id']),
+      completedAt: serializer.fromJson<DateTime?>(json['completedAt']),
+      lastRefreshAt: serializer.fromJson<DateTime?>(json['lastRefreshAt']),
+      bootstrapVersion: serializer.fromJson<String?>(json['bootstrapVersion']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'completedAt': serializer.toJson<DateTime?>(completedAt),
+      'lastRefreshAt': serializer.toJson<DateTime?>(lastRefreshAt),
+      'bootstrapVersion': serializer.toJson<String?>(bootstrapVersion),
+    };
+  }
+
+  BootstrapStateData copyWith({
+    int? id,
+    Value<DateTime?> completedAt = const Value.absent(),
+    Value<DateTime?> lastRefreshAt = const Value.absent(),
+    Value<String?> bootstrapVersion = const Value.absent(),
+  }) => BootstrapStateData(
+    id: id ?? this.id,
+    completedAt: completedAt.present ? completedAt.value : this.completedAt,
+    lastRefreshAt: lastRefreshAt.present
+        ? lastRefreshAt.value
+        : this.lastRefreshAt,
+    bootstrapVersion: bootstrapVersion.present
+        ? bootstrapVersion.value
+        : this.bootstrapVersion,
+  );
+  BootstrapStateData copyWithCompanion(BootstrapStateCompanion data) {
+    return BootstrapStateData(
+      id: data.id.present ? data.id.value : this.id,
+      completedAt: data.completedAt.present
+          ? data.completedAt.value
+          : this.completedAt,
+      lastRefreshAt: data.lastRefreshAt.present
+          ? data.lastRefreshAt.value
+          : this.lastRefreshAt,
+      bootstrapVersion: data.bootstrapVersion.present
+          ? data.bootstrapVersion.value
+          : this.bootstrapVersion,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BootstrapStateData(')
+          ..write('id: $id, ')
+          ..write('completedAt: $completedAt, ')
+          ..write('lastRefreshAt: $lastRefreshAt, ')
+          ..write('bootstrapVersion: $bootstrapVersion')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, completedAt, lastRefreshAt, bootstrapVersion);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is BootstrapStateData &&
+          other.id == this.id &&
+          other.completedAt == this.completedAt &&
+          other.lastRefreshAt == this.lastRefreshAt &&
+          other.bootstrapVersion == this.bootstrapVersion);
+}
+
+class BootstrapStateCompanion extends UpdateCompanion<BootstrapStateData> {
+  final Value<int> id;
+  final Value<DateTime?> completedAt;
+  final Value<DateTime?> lastRefreshAt;
+  final Value<String?> bootstrapVersion;
+  const BootstrapStateCompanion({
+    this.id = const Value.absent(),
+    this.completedAt = const Value.absent(),
+    this.lastRefreshAt = const Value.absent(),
+    this.bootstrapVersion = const Value.absent(),
+  });
+  BootstrapStateCompanion.insert({
+    this.id = const Value.absent(),
+    this.completedAt = const Value.absent(),
+    this.lastRefreshAt = const Value.absent(),
+    this.bootstrapVersion = const Value.absent(),
+  });
+  static Insertable<BootstrapStateData> custom({
+    Expression<int>? id,
+    Expression<DateTime>? completedAt,
+    Expression<DateTime>? lastRefreshAt,
+    Expression<String>? bootstrapVersion,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (completedAt != null) 'completed_at': completedAt,
+      if (lastRefreshAt != null) 'last_refresh_at': lastRefreshAt,
+      if (bootstrapVersion != null) 'bootstrap_version': bootstrapVersion,
+    });
+  }
+
+  BootstrapStateCompanion copyWith({
+    Value<int>? id,
+    Value<DateTime?>? completedAt,
+    Value<DateTime?>? lastRefreshAt,
+    Value<String?>? bootstrapVersion,
+  }) {
+    return BootstrapStateCompanion(
+      id: id ?? this.id,
+      completedAt: completedAt ?? this.completedAt,
+      lastRefreshAt: lastRefreshAt ?? this.lastRefreshAt,
+      bootstrapVersion: bootstrapVersion ?? this.bootstrapVersion,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (completedAt.present) {
+      map['completed_at'] = Variable<DateTime>(completedAt.value);
+    }
+    if (lastRefreshAt.present) {
+      map['last_refresh_at'] = Variable<DateTime>(lastRefreshAt.value);
+    }
+    if (bootstrapVersion.present) {
+      map['bootstrap_version'] = Variable<String>(bootstrapVersion.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BootstrapStateCompanion(')
+          ..write('id: $id, ')
+          ..write('completedAt: $completedAt, ')
+          ..write('lastRefreshAt: $lastRefreshAt, ')
+          ..write('bootstrapVersion: $bootstrapVersion')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3101,12 +3428,14 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $CatalogueTableTable catalogueTable = $CatalogueTableTable(this);
   late final $StockReceiptsTableTable stockReceiptsTable =
       $StockReceiptsTableTable(this);
+  late final $BootstrapStateTable bootstrapState = $BootstrapStateTable(this);
   late final ShiftsDao shiftsDao = ShiftsDao(this as AppDatabase);
   late final SalesDao salesDao = SalesDao(this as AppDatabase);
   late final CatalogueDao catalogueDao = CatalogueDao(this as AppDatabase);
   late final StockReceiptsDao stockReceiptsDao = StockReceiptsDao(
     this as AppDatabase,
   );
+  late final BootstrapDao bootstrapDao = BootstrapDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3117,6 +3446,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     saleLinesTable,
     catalogueTable,
     stockReceiptsTable,
+    bootstrapState,
   ];
 }
 
@@ -4684,6 +5014,202 @@ typedef $$StockReceiptsTableTableProcessedTableManager =
       StockReceiptsTableData,
       PrefetchHooks Function()
     >;
+typedef $$BootstrapStateTableCreateCompanionBuilder =
+    BootstrapStateCompanion Function({
+      Value<int> id,
+      Value<DateTime?> completedAt,
+      Value<DateTime?> lastRefreshAt,
+      Value<String?> bootstrapVersion,
+    });
+typedef $$BootstrapStateTableUpdateCompanionBuilder =
+    BootstrapStateCompanion Function({
+      Value<int> id,
+      Value<DateTime?> completedAt,
+      Value<DateTime?> lastRefreshAt,
+      Value<String?> bootstrapVersion,
+    });
+
+class $$BootstrapStateTableFilterComposer
+    extends Composer<_$AppDatabase, $BootstrapStateTable> {
+  $$BootstrapStateTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get completedAt => $composableBuilder(
+    column: $table.completedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastRefreshAt => $composableBuilder(
+    column: $table.lastRefreshAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bootstrapVersion => $composableBuilder(
+    column: $table.bootstrapVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$BootstrapStateTableOrderingComposer
+    extends Composer<_$AppDatabase, $BootstrapStateTable> {
+  $$BootstrapStateTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get completedAt => $composableBuilder(
+    column: $table.completedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastRefreshAt => $composableBuilder(
+    column: $table.lastRefreshAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get bootstrapVersion => $composableBuilder(
+    column: $table.bootstrapVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$BootstrapStateTableAnnotationComposer
+    extends Composer<_$AppDatabase, $BootstrapStateTable> {
+  $$BootstrapStateTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get completedAt => $composableBuilder(
+    column: $table.completedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get lastRefreshAt => $composableBuilder(
+    column: $table.lastRefreshAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get bootstrapVersion => $composableBuilder(
+    column: $table.bootstrapVersion,
+    builder: (column) => column,
+  );
+}
+
+class $$BootstrapStateTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $BootstrapStateTable,
+          BootstrapStateData,
+          $$BootstrapStateTableFilterComposer,
+          $$BootstrapStateTableOrderingComposer,
+          $$BootstrapStateTableAnnotationComposer,
+          $$BootstrapStateTableCreateCompanionBuilder,
+          $$BootstrapStateTableUpdateCompanionBuilder,
+          (
+            BootstrapStateData,
+            BaseReferences<
+              _$AppDatabase,
+              $BootstrapStateTable,
+              BootstrapStateData
+            >,
+          ),
+          BootstrapStateData,
+          PrefetchHooks Function()
+        > {
+  $$BootstrapStateTableTableManager(
+    _$AppDatabase db,
+    $BootstrapStateTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$BootstrapStateTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$BootstrapStateTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$BootstrapStateTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<DateTime?> completedAt = const Value.absent(),
+                Value<DateTime?> lastRefreshAt = const Value.absent(),
+                Value<String?> bootstrapVersion = const Value.absent(),
+              }) => BootstrapStateCompanion(
+                id: id,
+                completedAt: completedAt,
+                lastRefreshAt: lastRefreshAt,
+                bootstrapVersion: bootstrapVersion,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<DateTime?> completedAt = const Value.absent(),
+                Value<DateTime?> lastRefreshAt = const Value.absent(),
+                Value<String?> bootstrapVersion = const Value.absent(),
+              }) => BootstrapStateCompanion.insert(
+                id: id,
+                completedAt: completedAt,
+                lastRefreshAt: lastRefreshAt,
+                bootstrapVersion: bootstrapVersion,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$BootstrapStateTable, BootstrapStateData>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $BootstrapStateTable,
+                    BootstrapStateData
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$BootstrapStateTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $BootstrapStateTable,
+      BootstrapStateData,
+      $$BootstrapStateTableFilterComposer,
+      $$BootstrapStateTableOrderingComposer,
+      $$BootstrapStateTableAnnotationComposer,
+      $$BootstrapStateTableCreateCompanionBuilder,
+      $$BootstrapStateTableUpdateCompanionBuilder,
+      (
+        BootstrapStateData,
+        BaseReferences<_$AppDatabase, $BootstrapStateTable, BootstrapStateData>,
+      ),
+      BootstrapStateData,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -4698,4 +5224,6 @@ class $AppDatabaseManager {
       $$CatalogueTableTableTableManager(_db, _db.catalogueTable);
   $$StockReceiptsTableTableTableManager get stockReceiptsTable =>
       $$StockReceiptsTableTableTableManager(_db, _db.stockReceiptsTable);
+  $$BootstrapStateTableTableManager get bootstrapState =>
+      $$BootstrapStateTableTableManager(_db, _db.bootstrapState);
 }

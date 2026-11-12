@@ -1,8 +1,7 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pos_tablet/di/app_dependencies.dart';
+import 'package:pos_tablet/ui/bootstrap/bootstrap_view_model.dart';
 import 'package:pos_tablet/ui/sales/viewmodel/cart_view_model.dart';
 import 'package:pos_tablet/ui/sales/viewmodel/catalogue_view_model.dart';
 import 'package:pos_tablet/ui/sales/viewmodel/checkout_view_model.dart';
@@ -50,6 +49,9 @@ class PosTabletApp extends StatelessWidget {
           ),
         ),
         ChangeNotifierProvider<CartViewModel>(create: (_) => CartViewModel()),
+        ChangeNotifierProvider<BootstrapViewModel>(
+          create: (_) => BootstrapViewModel(dependencies.bootstrapRepository),
+        ),
 
         ChangeNotifierProvider<ShiftSummaryViewModel>(
           create: (ctx) => ShiftSummaryViewModel(
@@ -73,6 +75,7 @@ class _AppView extends StatefulWidget {
 class _AppViewState extends State<_AppView> {
   late final AuthViewModel _auth;
   late final ShiftViewModel _shift;
+  late final BootstrapViewModel _bootstrapViewModel;
   late final GoRouter _router;
 
   @override
@@ -80,19 +83,27 @@ class _AppViewState extends State<_AppView> {
     super.initState();
     _auth = context.read<AuthViewModel>();
     _shift = context.read<ShiftViewModel>();
-    _router = createRouter(_auth, _shift);
+    _bootstrapViewModel = context.read<BootstrapViewModel>();
+
+    _router = createRouter(_auth, _bootstrapViewModel, _shift);
 
     _auth.addListener(_onAuthChanged);
+
+    _bootstrapViewModel.addListener(_onBootstrapChanged);
     _onAuthChanged(); // auth might already be resolved by the time we get here
   }
 
+  void _onBootstrapChanged() {
+    if (_bootstrapViewModel.isReady && _shift.state == ShiftState.unknown) {
+      _shift.restoreShift();
+    }
+  }
+
+  // async
   void _onAuthChanged() {
     switch (_auth.status) {
       case AuthStatus.authenticated:
-        unawaited(_shift.restoreShift()); // idempotent, local-only
-        unawaited(
-          context.read<AppDependencies>().catalogueSeeder.seedIfEmpty(),
-        );
+        _bootstrapViewModel.restoreState();
       case AuthStatus.unauthenticated:
         _shift.reset();
       case AuthStatus.uninitialized:
@@ -103,6 +114,7 @@ class _AppViewState extends State<_AppView> {
   @override
   void dispose() {
     _auth.removeListener(_onAuthChanged);
+    _bootstrapViewModel.removeListener(_onBootstrapChanged);
     _router.dispose();
     super.dispose();
   }
