@@ -7,7 +7,7 @@ import 'package:pos_tablet/ui/cash/cash_movements_screen.dart';
 import 'package:pos_tablet/ui/dashboard/dashboard_screen.dart';
 import 'package:pos_tablet/ui/sales/cart_screen.dart';
 import 'package:pos_tablet/ui/sales/checkout_screen.dart';
-import 'package:pos_tablet/ui/sales/product_catalogue_screen.dart';
+import 'package:pos_tablet/ui/sales/new_sale_screen.dart';
 import 'package:pos_tablet/ui/sales/receipt_screen.dart';
 import 'package:pos_tablet/ui/sales/sales_history_screen.dart';
 import 'package:pos_tablet/ui/shifts/shift_screen.dart';
@@ -144,7 +144,7 @@ GoRouter createRouter(
     GoRoute(
       path: '/sales',
       name: 'sales',
-      builder: (context, state) => const ProductCatalogueScreen(),
+      builder: (context, state) => const NewSaleScreen(),
     ),
 
     GoRoute(
