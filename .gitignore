@@ -1,4 +1,4 @@
-﻿# Dart and Flutter generated files
+# Dart and Flutter generated files
 .dart_tool/
 .packages
 .pub-cache/
@@ -20,3 +20,5 @@ node_modules/
 .DS_Store
 Thumbs.db
 env.json
+# Widget Preview related
+.widget_preview/

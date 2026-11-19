@@ -34,20 +34,27 @@ class ShiftViewModel extends ChangeNotifier {
   /// Local-only, idempotent. Drives routing, so it must never touch the network.
   Future<void> restoreShift() async {
     if (_hasLoaded || _isRestoring) return;
+
     _isRestoring = true;
+
     try {
       final result = await _shiftRepository.getOpenShift();
+
       switch (result) {
         case Ok<Shift?>(value: final shift):
           _currentShift = shift;
+
         case Error<Shift?>(error: final e):
           debugPrint('Could not read local shift: $e');
-          _currentShift = null; // don't block routing on a local read failure
+          _currentShift = null;
       }
-      _hasLoaded = true;
-      notifyListeners();
+    } catch (e) {
+      debugPrint('Unexpected error restoring shift: $e');
+      _currentShift = null;
     } finally {
+      _hasLoaded = true;
       _isRestoring = false;
+      notifyListeners();
     }
   }
 

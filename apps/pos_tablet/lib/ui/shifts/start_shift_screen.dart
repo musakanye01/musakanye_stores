@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widget_previews.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pos_tablet/ui/shifts/shift_view_model.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_core/util/result.dart';
 
 class StartShiftScreen extends StatefulWidget {
+  @Preview(name: 'StartShiftScreen')
   const StartShiftScreen({super.key});
 
   @override

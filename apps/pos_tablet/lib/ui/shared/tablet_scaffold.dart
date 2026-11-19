@@ -1,122 +1,180 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pos_tablet/ui/shared/widget/app_nav_rail.dart';
 
-class TabletScaffold extends StatelessWidget {
+class TabletScaffold extends StatefulWidget {
   const TabletScaffold({super.key, required this.child});
 
   final Widget child;
 
-  static const _destinations = [
-    _NavigationItem(
-      label: 'Home',
+  @override
+  State<TabletScaffold> createState() => _TabletScaffoldState();
+}
+
+class _TabletScaffoldState extends State<TabletScaffold> {
+  // Starts collapsed on every application launch.
+  bool _expanded = false;
+
+  static const double _mobileBreakpoint = 600;
+  static const double _wideBreakpoint = 1000;
+
+  static const List<AppNavigationDestination> _destinations = [
+    AppNavigationDestination(
+      label: 'Dashboard',
       icon: Icons.dashboard_outlined,
+      selectedIcon: Icons.dashboard_rounded,
       route: '/dashboard',
     ),
-    _NavigationItem(
-      label: 'New Sale',
+    AppNavigationDestination(
+      label: 'Sale',
       icon: Icons.point_of_sale_outlined,
+      selectedIcon: Icons.point_of_sale_rounded,
       route: '/sales',
     ),
-    // _NavigationItem(
-    //   label: 'Stock Receiving',
-    //   icon: Icons.inventory_2_outlined,
-    //   route: '/stock-receiving',
-    // ),
-    _NavigationItem(
+    AppNavigationDestination(
       label: 'Sale History',
-      icon: Icons.payments_outlined,
+      icon: Icons.receipt_long_outlined,
+      selectedIcon: Icons.receipt_long_rounded,
       route: '/sales-history',
     ),
-    _NavigationItem(
+    AppNavigationDestination(
       label: 'Shift',
-      icon: Icons.schedule_outlined,
+      icon: Icons.access_time_outlined,
+      selectedIcon: Icons.access_time_filled_rounded,
       route: '/shift',
     ),
   ];
 
-  @override
-  Widget build(BuildContext context) {
-    final currentLocation = GoRouterState.of(context).matchedLocation;
+  int _selectedIndex(String location) {
+    if (location.startsWith('/sales') ||
+        location.startsWith('/checkout') ||
+        location.startsWith('/cart') ||
+        location.startsWith('/receipt')) {
+      // Receipt routes belong to the sales workflow.
+      return location.startsWith('/receipt') ? 2 : 1;
+    }
 
-    return Scaffold(
-      body: Row(
-        children: [
-          Container(
-            width: 225,
-            color: Theme.of(context).colorScheme.surfaceContainerLow,
-            child: SafeArea(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Padding(
-                    padding: EdgeInsets.fromLTRB(20, 24, 20, 28),
-                    child: Row(
-                      children: [
-                        Icon(Icons.storefront_outlined, size: 30),
-                        SizedBox(width: 12),
-                        Text(
-                          'POS Terminal',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Divider(height: 1),
-                  const SizedBox(height: 12),
-                  Expanded(
-                    child: ListView(
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      children: _destinations.map((item) {
-                        final selected = currentLocation == item.route;
+    if (location.startsWith('/shift') ||
+        location.startsWith('/start-shift') ||
+        location.startsWith('/cash-movements')) {
+      return 3;
+    }
 
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 4),
-                          child: ListTile(
-                            leading: Icon(item.icon),
-                            title: Text(item.label),
-                            selected: selected,
-                            selectedTileColor: Theme.of(context)
-                                .colorScheme
-                                .secondaryContainer,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            onTap: () => context.go(item.route),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                  const Divider(height: 1),
-                  ListTile(
-                    leading: const Icon(Icons.logout),
-                    title: const Text('Exit demo'),
-                    onTap: () => context.go('/login'),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-              ),
-            ),
-          ),
-          const VerticalDivider(width: 1, thickness: 1),
-          Expanded(child: SafeArea(child: child)),
-        ],
-      ),
+    return 0;
+  }
+
+  void _navigateTo(int index) {
+    if (index < 0 || index >= _destinations.length) return;
+
+    final route = _destinations[index].route;
+
+    if (mounted) {
+      context.go(route);
+    }
+
+    if (_expanded && MediaQuery.sizeOf(context).width < _wideBreakpoint) {
+      setState(() => _expanded = false);
+    }
+  }
+
+  Widget _buildNavigation({
+    required int selectedIndex,
+    required bool expanded,
+    bool overlay = false,
+  }) {
+    return AppNavigationRail(
+      expanded: expanded,
+      selectedIndex: selectedIndex,
+      destinations: _destinations,
+      onToggle: () {
+        setState(() => _expanded = !_expanded);
+      },
+      onDestinationSelected: _navigateTo,
+      onExit: () {},
+      overlay: overlay,
     );
   }
-}
 
-class _NavigationItem {
-  const _NavigationItem({
-    required this.label,
-    required this.icon,
-    required this.route,
-  });
+  Widget _buildMobileNavigation(int selectedIndex) {
+    return NavigationBar(
+      selectedIndex: selectedIndex,
+      onDestinationSelected: _navigateTo,
+      destinations: [
+        for (final destination in _destinations)
+          NavigationDestination(
+            icon: Icon(destination.icon),
+            selectedIcon: Icon(destination.selectedIcon),
+            label: destination.label,
+          ),
+      ],
+    );
+  }
 
-  final String label;
-  final IconData icon;
-  final String route;
+  Widget _buildWideLayout(int selectedIndex) {
+    return Row(
+      children: [
+        _buildNavigation(selectedIndex: selectedIndex, expanded: _expanded),
+        Expanded(child: widget.child),
+      ],
+    );
+  }
+
+  Widget _buildConstrainedLayout(int selectedIndex) {
+    return Stack(
+      children: [
+        Row(
+          children: [
+            _buildNavigation(selectedIndex: selectedIndex, expanded: false),
+            Expanded(child: widget.child),
+          ],
+        ),
+
+        if (_expanded) ...[
+          Positioned.fill(
+            left: AppNavigationRail.collapsedWidth,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => setState(() => _expanded = false),
+              child: ColoredBox(color: Colors.black.withValues(alpha: 0.16)),
+            ),
+          ),
+          Positioned(
+            top: 0,
+            bottom: 0,
+            left: 0,
+            child: _buildNavigation(
+              selectedIndex: selectedIndex,
+              expanded: true,
+              overlay: true,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final location = GoRouterState.of(context).uri.path;
+    final selectedIndex = _selectedIndex(location);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+
+        if (width < _mobileBreakpoint) {
+          return Scaffold(
+            body: widget.child,
+            bottomNavigationBar: _buildMobileNavigation(selectedIndex),
+          );
+        }
+
+        return Scaffold(
+          body: width < _wideBreakpoint
+              ? _buildConstrainedLayout(selectedIndex)
+              : _buildWideLayout(selectedIndex),
+        );
+      },
+    );
+  }
 }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pos_tablet/data/sync/sync_coordinator.dart';
@@ -12,6 +14,7 @@ import 'package:pos_tablet/ui/shifts/shift_view_model.dart';
 import 'package:pos_tablet/ui/stock/stock_receiving_view_model.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_core/ui/auth_view_model.dart';
+import 'package:shared_core/theme/app_theme.dart';
 
 import 'routing/app_router.dart';
 
@@ -102,29 +105,19 @@ class _AppViewState extends State<_AppView> {
     _auth.addListener(_onAuthChanged);
 
     _bootstrapViewModel.addListener(_onBootstrapChanged);
-    _shift.addListener(_onShiftChanged);
     _onAuthChanged(); // auth might already be resolved by the time we get here
   }
 
   void _onBootstrapChanged() {
-    if (_bootstrapViewModel.isReady && _shift.state == ShiftState.unknown) {
-      _shift.restoreShift();
-    }
-  }
+    if (!_bootstrapViewModel.isReady) return;
 
-  Future<void> _onShiftChanged() async {
-    if (_syncInitialized) {
-      return;
+    if (_shift.state == ShiftState.unknown) {
+      unawaited(_shift.restoreShift());
     }
 
-    final state = _shift.state;
-
-    if (state == ShiftState.open ||
-        state == ShiftState.none ||
-        state == ShiftState.unknown) {
+    if (!_syncInitialized) {
       _syncInitialized = true;
-
-      await _syncCoordinator.initialize();
+      unawaited(_syncCoordinator.initialize());
     }
   }
 
@@ -145,7 +138,6 @@ class _AppViewState extends State<_AppView> {
     _auth.removeListener(_onAuthChanged);
     _bootstrapViewModel.removeListener(_onBootstrapChanged);
     _router.dispose();
-    _shift.removeListener(_onShiftChanged);
     super.dispose();
   }
 
@@ -154,10 +146,7 @@ class _AppViewState extends State<_AppView> {
     return MaterialApp.router(
       title: 'POS',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2457C5)),
-      ),
+      theme: AppTheme.light,
       routerConfig: _router,
     );
   }

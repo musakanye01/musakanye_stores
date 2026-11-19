@@ -29,14 +29,12 @@ class SyncCoordinatorImp extends ChangeNotifier implements SyncCoordinator {
   });
 
   bool _syncing = false;
+  bool _initialized = false;
 
   SyncStatus _status = SyncStatus.idle;
-
   DateTime? _lastSuccessfulSync;
 
-  // ignore: unused_field
   StreamSubscription<bool>? _subscription;
-
   Timer? _heartbeat;
 
   @override
@@ -45,54 +43,69 @@ class SyncCoordinatorImp extends ChangeNotifier implements SyncCoordinator {
   @override
   SyncStatus get status => _status;
 
-  @override
-  Future<void> triggerSync() async {
-    if (_syncing) {
-      return;
-    }
-
-    _syncing = true;
-
-    try {
-      print("Triggering Sync");
-      _status = SyncStatus.syncing;
-      notifyListeners();
-
-      await _runPipeline();
-
-      _lastSuccessfulSync = DateTime.now();
-
-      _status = SyncStatus.idle;
-    } catch (_) {
-      _status = SyncStatus.syncFailed; //todo: check
-    } finally {
-      _syncing = false;
-      notifyListeners();
-    }
+  void _updateStatus(SyncStatus status) {
+    if (_status == status) return;
+    _status = status;
+    notifyListeners();
   }
 
   @override
   Future<void> initialize() async {
-    _heartbeat = Timer.periodic(
-      const Duration(minutes: 5),
-      (_) => triggerSync(),
-    );
+    if (_initialized) return;
+    _initialized = true;
+
     _subscription = _connectivityService.onlineChanges.listen(
       _handleConnectivityChanged,
+    );
+
+    _heartbeat = Timer.periodic(
+      const Duration(minutes: 5),
+      (_) => unawaited(triggerSync()),
     );
 
     if (await _connectivityService.isOnline) {
       unawaited(triggerSync());
     } else {
-      _status = SyncStatus.waitingForNetwork;
-      notifyListeners();
+      _updateStatus(SyncStatus.waitingForNetwork);
+    }
+  }
+
+  @override
+  Future<void> triggerSync() async {
+    if (_syncing) return;
+
+    if (!await _connectivityService.isOnline) {
+      _updateStatus(SyncStatus.waitingForNetwork);
+      return;
+    }
+
+    _syncing = true;
+    _updateStatus(SyncStatus.syncing);
+
+    try {
+      await _runPipeline();
+
+      _lastSuccessfulSync = DateTime.now();
+
+      if (await _connectivityService.isOnline) {
+        _updateStatus(SyncStatus.success);
+      } else {
+        _updateStatus(SyncStatus.waitingForNetwork);
+      }
+    } catch (_) {
+      if (await _connectivityService.isOnline) {
+        _updateStatus(SyncStatus.syncFailed);
+      } else {
+        _updateStatus(SyncStatus.waitingForNetwork);
+      }
+    } finally {
+      _syncing = false;
     }
   }
 
   Future<void> _handleConnectivityChanged(bool online) async {
     if (!online) {
-      _status = SyncStatus.waitingForNetwork;
-      notifyListeners();
+      _updateStatus(SyncStatus.waitingForNetwork);
       return;
     }
 
@@ -101,9 +114,7 @@ class SyncCoordinatorImp extends ChangeNotifier implements SyncCoordinator {
 
   Future<void> _runPipeline() async {
     await _shiftSyncService.syncOpenShifts();
-
     await _salesSyncService.syncSales();
-
     await _shiftSyncService.syncClosedShifts();
   }
 
