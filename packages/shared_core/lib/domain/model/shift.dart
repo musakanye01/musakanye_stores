@@ -5,6 +5,7 @@ class Shift {
   final int openingFloatCents;
   final String status;
   final DateTime openedAt;
+  final DateTime? closedAt;
   final int? closingFloatCents;
 
   const Shift({
@@ -15,6 +16,7 @@ class Shift {
     required this.status,
     required this.openedAt,
     this.closingFloatCents,
+    this.closedAt,
   });
 
   double get openingFloat => openingFloatCents / 100;

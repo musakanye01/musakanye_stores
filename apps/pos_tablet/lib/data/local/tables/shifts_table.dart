@@ -16,9 +16,16 @@ class ShiftsTable extends Table {
   TextColumn get idempotencyKey => text()();
   DateTimeColumn get openedAt => dateTime()();
   DateTimeColumn get closedAt => dateTime().nullable()();
+  TextColumn get closeIdempotencyKey => text().nullable()();
+
+  BoolColumn get openSynced => boolean().withDefault(const Constant(false))();
+
+  BoolColumn get closeSynced => boolean().withDefault(const Constant(false))();
+
+  BoolColumn get syncError => boolean().withDefault(const Constant(false))();
 
   BoolColumn get synced => boolean().withDefault(const Constant(false))();
-  BoolColumn get syncError => boolean().withDefault(const Constant(false))();
+
   TextColumn get syncErrorMessage => text().nullable()();
 
   @override

@@ -3,6 +3,7 @@ import 'package:pos_tablet/data/local/app_database.dart';
 import 'package:pos_tablet/data/local/tables/shifts_table.dart';
 
 import 'package:shared_core/domain/model/shift.dart';
+import 'package:uuid/uuid.dart';
 
 part 'shifts_dao.g.dart';
 
@@ -18,23 +19,6 @@ class ShiftsDao extends DatabaseAccessor<AppDatabase> with _$ShiftsDaoMixin {
             )
             ..limit(1))
           .getSingleOrNull();
-
-  /// True when a locally closed shift has not yet been confirmed by Supabase.
-  /// This prevents a stale remote open shift from being restored after an
-  /// offline close.
-  Future<bool> hasPendingClose(String cashierId) async {
-    final row =
-        await (select(shiftsTable)
-              ..where(
-                (t) =>
-                    t.cashierId.equals(cashierId) &
-                    t.status.equals('closed') &
-                    t.synced.equals(false),
-              )
-              ..limit(1))
-            .getSingleOrNull();
-    return row != null;
-  }
 
   /// Returns false (and inserts nothing) if the cashier already has an open shift.
   Future<bool> insertIfNoneOpen(ShiftsTableCompanion shift, String cashierId) {
@@ -54,6 +38,44 @@ class ShiftsDao extends DatabaseAccessor<AppDatabase> with _$ShiftsDaoMixin {
   Future<void> upsertShift(ShiftsTableCompanion row) =>
       into(shiftsTable).insertOnConflictUpdate(row);
 
+  Future<void> markCloseSynced(String shiftId) =>
+      (update(shiftsTable)..where((t) => t.id.equals(shiftId))).write(
+        const ShiftsTableCompanion(
+          closeSynced: Value(true),
+          syncError: Value(false),
+          syncErrorMessage: Value(null),
+        ),
+      );
+
+  Future<void> markSyncFailed(String shiftId, String errorMessage) =>
+      (update(shiftsTable)..where((t) => t.id.equals(shiftId))).write(
+        ShiftsTableCompanion(
+          syncError: const Value(true),
+          syncErrorMessage: Value(errorMessage),
+        ),
+      );
+
+  Future<void> markOpenSynced(String shiftId) =>
+      (update(shiftsTable)..where((t) => t.id.equals(shiftId))).write(
+        const ShiftsTableCompanion(
+          openSynced: Value(true),
+          syncError: Value(false),
+          syncErrorMessage: Value(null),
+        ),
+      );
+
+  Future<List<ShiftsTableData>> getUnsyncedOpenShifts() {
+    return (select(
+      shiftsTable,
+    )..where((t) => t.openSynced.equals(false))).get();
+  }
+
+  Future<List<ShiftsTableData>> getUnsyncedClosedShifts() {
+    return (select(
+      shiftsTable,
+    )..where((t) => t.synced.equals(false) & t.status.equals('closed'))).get();
+  }
+
   /// Marks a shift as closed locally.
   Future<void> markClosed({
     required String shiftId,
@@ -65,34 +87,12 @@ class ShiftsDao extends DatabaseAccessor<AppDatabase> with _$ShiftsDaoMixin {
       closingCountedCents: Value(countedCashCents),
       closingNote: Value(closingNote),
       closedAt: Value(DateTime.now().toUtc()),
-      synced: const Value(false),
+      closeIdempotencyKey: Value(const Uuid().v4()),
+      closeSynced: const Value(false),
       syncError: const Value(false),
       syncErrorMessage: const Value(null),
     ),
   );
-
-  /// Returns all rows that still need to be pushed to Supabase.
-  Future<List<ShiftsTableData>> getUnsynced() =>
-      (select(shiftsTable)..where((t) => t.synced.equals(false))).get();
-
-  /// Marks a shift as successfully synced.
-  Future<void> markSynced(String shiftId) =>
-      (update(shiftsTable)..where((t) => t.id.equals(shiftId))).write(
-        const ShiftsTableCompanion(
-          synced: Value(true),
-          syncError: Value(false),
-          syncErrorMessage: Value(null),
-        ),
-      );
-
-  /// Records a sync failure with the server error message.
-  Future<void> markSyncFailed(String shiftId, String errorMessage) =>
-      (update(shiftsTable)..where((t) => t.id.equals(shiftId))).write(
-        ShiftsTableCompanion(
-          syncError: const Value(true),
-          syncErrorMessage: Value(errorMessage),
-        ),
-      );
 
   /// Converts a Drift row to the domain [Shift] model.
   static Shift toDomain(ShiftsTableData row) => Shift(
@@ -102,6 +102,7 @@ class ShiftsDao extends DatabaseAccessor<AppDatabase> with _$ShiftsDaoMixin {
     openingFloatCents: row.openingFloatCents,
     status: row.status,
     openedAt: row.openedAt,
+    closedAt: row.closedAt,
     closingFloatCents: row.closingCountedCents,
   );
 }

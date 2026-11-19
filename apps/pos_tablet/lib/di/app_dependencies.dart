@@ -49,7 +49,7 @@ class AppDependencies {
     // Core services
     _authService = AuthService(_supabase.client);
     _authRepository = AuthRepositoryImpl(authService: _authService);
-    _shiftService = ShiftService(_supabase.client);
+    _shiftService = ShiftServiceImp(client: _supabase.client);
     _shiftRepository = ShiftRepositoryImpl(_shiftService, _db.shiftsDao);
     _productService = ProductService(_supabase.client);
     _productRepository = ProductRepositoryImpl(_db.catalogueDao);

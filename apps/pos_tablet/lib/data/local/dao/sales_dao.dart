@@ -3,6 +3,7 @@ import 'package:pos_tablet/data/local/app_database.dart';
 import 'package:pos_tablet/data/local/tables/catalogue_table.dart';
 import 'package:pos_tablet/data/local/tables/sale_lines_table.dart';
 import 'package:pos_tablet/data/local/tables/sales_table.dart';
+import 'package:pos_tablet/data/sync/model/pending_sale_sync.dart';
 import 'package:shared_core/domain/model/shift_sales_summary.dart';
 
 part 'sales_dao.g.dart';
@@ -173,5 +174,19 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
           product: r.readTableOrNull(catalogueTable),
         ),
     ];
+  }
+
+  Future<List<PendingSaleSync>> getPendingSalesForSync() async {
+    final sales = await getUnsynced();
+
+    final result = <PendingSaleSync>[];
+
+    for (final sale in sales) {
+      final lines = await getLinesForSale(sale.id);
+
+      result.add(PendingSaleSync(sale: sale, items: lines));
+    }
+
+    return result;
   }
 }

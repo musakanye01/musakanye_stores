@@ -103,16 +103,44 @@ class $ShiftsTableTable extends ShiftsTable
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _syncedMeta = const VerificationMeta('synced');
+  static const VerificationMeta _closeIdempotencyKeyMeta =
+      const VerificationMeta('closeIdempotencyKey');
   @override
-  late final GeneratedColumn<bool> synced = GeneratedColumn<bool>(
-    'synced',
+  late final GeneratedColumn<String> closeIdempotencyKey =
+      GeneratedColumn<String>(
+        'close_idempotency_key',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _openSyncedMeta = const VerificationMeta(
+    'openSynced',
+  );
+  @override
+  late final GeneratedColumn<bool> openSynced = GeneratedColumn<bool>(
+    'open_synced',
     aliasedName,
     false,
     type: DriftSqlType.bool,
     requiredDuringInsert: false,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("synced" IN (0, 1))',
+      'CHECK ("open_synced" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _closeSyncedMeta = const VerificationMeta(
+    'closeSynced',
+  );
+  @override
+  late final GeneratedColumn<bool> closeSynced = GeneratedColumn<bool>(
+    'close_synced',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("close_synced" IN (0, 1))',
     ),
     defaultValue: const Constant(false),
   );
@@ -128,6 +156,19 @@ class $ShiftsTableTable extends ShiftsTable
     requiredDuringInsert: false,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
       'CHECK ("sync_error" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _syncedMeta = const VerificationMeta('synced');
+  @override
+  late final GeneratedColumn<bool> synced = GeneratedColumn<bool>(
+    'synced',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("synced" IN (0, 1))',
     ),
     defaultValue: const Constant(false),
   );
@@ -153,8 +194,11 @@ class $ShiftsTableTable extends ShiftsTable
     idempotencyKey,
     openedAt,
     closedAt,
-    synced,
+    closeIdempotencyKey,
+    openSynced,
+    closeSynced,
     syncError,
+    synced,
     syncErrorMessage,
   ];
   @override
@@ -244,16 +288,40 @@ class $ShiftsTableTable extends ShiftsTable
         closedAt.isAcceptableOrUnknown(data['closed_at']!, _closedAtMeta),
       );
     }
-    if (data.containsKey('synced')) {
+    if (data.containsKey('close_idempotency_key')) {
       context.handle(
-        _syncedMeta,
-        synced.isAcceptableOrUnknown(data['synced']!, _syncedMeta),
+        _closeIdempotencyKeyMeta,
+        closeIdempotencyKey.isAcceptableOrUnknown(
+          data['close_idempotency_key']!,
+          _closeIdempotencyKeyMeta,
+        ),
+      );
+    }
+    if (data.containsKey('open_synced')) {
+      context.handle(
+        _openSyncedMeta,
+        openSynced.isAcceptableOrUnknown(data['open_synced']!, _openSyncedMeta),
+      );
+    }
+    if (data.containsKey('close_synced')) {
+      context.handle(
+        _closeSyncedMeta,
+        closeSynced.isAcceptableOrUnknown(
+          data['close_synced']!,
+          _closeSyncedMeta,
+        ),
       );
     }
     if (data.containsKey('sync_error')) {
       context.handle(
         _syncErrorMeta,
         syncError.isAcceptableOrUnknown(data['sync_error']!, _syncErrorMeta),
+      );
+    }
+    if (data.containsKey('synced')) {
+      context.handle(
+        _syncedMeta,
+        synced.isAcceptableOrUnknown(data['synced']!, _syncedMeta),
       );
     }
     if (data.containsKey('sync_error_message')) {
@@ -310,13 +378,25 @@ class $ShiftsTableTable extends ShiftsTable
         DriftSqlType.dateTime,
         data['${effectivePrefix}closed_at'],
       ),
-      synced: attachedDatabase.typeMapping.read(
+      closeIdempotencyKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}close_idempotency_key'],
+      ),
+      openSynced: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
-        data['${effectivePrefix}synced'],
+        data['${effectivePrefix}open_synced'],
+      )!,
+      closeSynced: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}close_synced'],
       )!,
       syncError: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}sync_error'],
+      )!,
+      synced: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}synced'],
       )!,
       syncErrorMessage: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -341,8 +421,11 @@ class ShiftsTableData extends DataClass implements Insertable<ShiftsTableData> {
   final String idempotencyKey;
   final DateTime openedAt;
   final DateTime? closedAt;
-  final bool synced;
+  final String? closeIdempotencyKey;
+  final bool openSynced;
+  final bool closeSynced;
   final bool syncError;
+  final bool synced;
   final String? syncErrorMessage;
   const ShiftsTableData({
     required this.id,
@@ -354,8 +437,11 @@ class ShiftsTableData extends DataClass implements Insertable<ShiftsTableData> {
     required this.idempotencyKey,
     required this.openedAt,
     this.closedAt,
-    required this.synced,
+    this.closeIdempotencyKey,
+    required this.openSynced,
+    required this.closeSynced,
     required this.syncError,
+    required this.synced,
     this.syncErrorMessage,
   });
   @override
@@ -376,8 +462,13 @@ class ShiftsTableData extends DataClass implements Insertable<ShiftsTableData> {
     if (!nullToAbsent || closedAt != null) {
       map['closed_at'] = Variable<DateTime>(closedAt);
     }
-    map['synced'] = Variable<bool>(synced);
+    if (!nullToAbsent || closeIdempotencyKey != null) {
+      map['close_idempotency_key'] = Variable<String>(closeIdempotencyKey);
+    }
+    map['open_synced'] = Variable<bool>(openSynced);
+    map['close_synced'] = Variable<bool>(closeSynced);
     map['sync_error'] = Variable<bool>(syncError);
+    map['synced'] = Variable<bool>(synced);
     if (!nullToAbsent || syncErrorMessage != null) {
       map['sync_error_message'] = Variable<String>(syncErrorMessage);
     }
@@ -401,8 +492,13 @@ class ShiftsTableData extends DataClass implements Insertable<ShiftsTableData> {
       closedAt: closedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(closedAt),
-      synced: Value(synced),
+      closeIdempotencyKey: closeIdempotencyKey == null && nullToAbsent
+          ? const Value.absent()
+          : Value(closeIdempotencyKey),
+      openSynced: Value(openSynced),
+      closeSynced: Value(closeSynced),
       syncError: Value(syncError),
+      synced: Value(synced),
       syncErrorMessage: syncErrorMessage == null && nullToAbsent
           ? const Value.absent()
           : Value(syncErrorMessage),
@@ -426,8 +522,13 @@ class ShiftsTableData extends DataClass implements Insertable<ShiftsTableData> {
       idempotencyKey: serializer.fromJson<String>(json['idempotencyKey']),
       openedAt: serializer.fromJson<DateTime>(json['openedAt']),
       closedAt: serializer.fromJson<DateTime?>(json['closedAt']),
-      synced: serializer.fromJson<bool>(json['synced']),
+      closeIdempotencyKey: serializer.fromJson<String?>(
+        json['closeIdempotencyKey'],
+      ),
+      openSynced: serializer.fromJson<bool>(json['openSynced']),
+      closeSynced: serializer.fromJson<bool>(json['closeSynced']),
       syncError: serializer.fromJson<bool>(json['syncError']),
+      synced: serializer.fromJson<bool>(json['synced']),
       syncErrorMessage: serializer.fromJson<String?>(json['syncErrorMessage']),
     );
   }
@@ -444,8 +545,11 @@ class ShiftsTableData extends DataClass implements Insertable<ShiftsTableData> {
       'idempotencyKey': serializer.toJson<String>(idempotencyKey),
       'openedAt': serializer.toJson<DateTime>(openedAt),
       'closedAt': serializer.toJson<DateTime?>(closedAt),
-      'synced': serializer.toJson<bool>(synced),
+      'closeIdempotencyKey': serializer.toJson<String?>(closeIdempotencyKey),
+      'openSynced': serializer.toJson<bool>(openSynced),
+      'closeSynced': serializer.toJson<bool>(closeSynced),
       'syncError': serializer.toJson<bool>(syncError),
+      'synced': serializer.toJson<bool>(synced),
       'syncErrorMessage': serializer.toJson<String?>(syncErrorMessage),
     };
   }
@@ -460,8 +564,11 @@ class ShiftsTableData extends DataClass implements Insertable<ShiftsTableData> {
     String? idempotencyKey,
     DateTime? openedAt,
     Value<DateTime?> closedAt = const Value.absent(),
-    bool? synced,
+    Value<String?> closeIdempotencyKey = const Value.absent(),
+    bool? openSynced,
+    bool? closeSynced,
     bool? syncError,
+    bool? synced,
     Value<String?> syncErrorMessage = const Value.absent(),
   }) => ShiftsTableData(
     id: id ?? this.id,
@@ -475,8 +582,13 @@ class ShiftsTableData extends DataClass implements Insertable<ShiftsTableData> {
     idempotencyKey: idempotencyKey ?? this.idempotencyKey,
     openedAt: openedAt ?? this.openedAt,
     closedAt: closedAt.present ? closedAt.value : this.closedAt,
-    synced: synced ?? this.synced,
+    closeIdempotencyKey: closeIdempotencyKey.present
+        ? closeIdempotencyKey.value
+        : this.closeIdempotencyKey,
+    openSynced: openSynced ?? this.openSynced,
+    closeSynced: closeSynced ?? this.closeSynced,
     syncError: syncError ?? this.syncError,
+    synced: synced ?? this.synced,
     syncErrorMessage: syncErrorMessage.present
         ? syncErrorMessage.value
         : this.syncErrorMessage,
@@ -500,8 +612,17 @@ class ShiftsTableData extends DataClass implements Insertable<ShiftsTableData> {
           : this.idempotencyKey,
       openedAt: data.openedAt.present ? data.openedAt.value : this.openedAt,
       closedAt: data.closedAt.present ? data.closedAt.value : this.closedAt,
-      synced: data.synced.present ? data.synced.value : this.synced,
+      closeIdempotencyKey: data.closeIdempotencyKey.present
+          ? data.closeIdempotencyKey.value
+          : this.closeIdempotencyKey,
+      openSynced: data.openSynced.present
+          ? data.openSynced.value
+          : this.openSynced,
+      closeSynced: data.closeSynced.present
+          ? data.closeSynced.value
+          : this.closeSynced,
       syncError: data.syncError.present ? data.syncError.value : this.syncError,
+      synced: data.synced.present ? data.synced.value : this.synced,
       syncErrorMessage: data.syncErrorMessage.present
           ? data.syncErrorMessage.value
           : this.syncErrorMessage,
@@ -520,8 +641,11 @@ class ShiftsTableData extends DataClass implements Insertable<ShiftsTableData> {
           ..write('idempotencyKey: $idempotencyKey, ')
           ..write('openedAt: $openedAt, ')
           ..write('closedAt: $closedAt, ')
-          ..write('synced: $synced, ')
+          ..write('closeIdempotencyKey: $closeIdempotencyKey, ')
+          ..write('openSynced: $openSynced, ')
+          ..write('closeSynced: $closeSynced, ')
           ..write('syncError: $syncError, ')
+          ..write('synced: $synced, ')
           ..write('syncErrorMessage: $syncErrorMessage')
           ..write(')'))
         .toString();
@@ -538,8 +662,11 @@ class ShiftsTableData extends DataClass implements Insertable<ShiftsTableData> {
     idempotencyKey,
     openedAt,
     closedAt,
-    synced,
+    closeIdempotencyKey,
+    openSynced,
+    closeSynced,
     syncError,
+    synced,
     syncErrorMessage,
   );
   @override
@@ -555,8 +682,11 @@ class ShiftsTableData extends DataClass implements Insertable<ShiftsTableData> {
           other.idempotencyKey == this.idempotencyKey &&
           other.openedAt == this.openedAt &&
           other.closedAt == this.closedAt &&
-          other.synced == this.synced &&
+          other.closeIdempotencyKey == this.closeIdempotencyKey &&
+          other.openSynced == this.openSynced &&
+          other.closeSynced == this.closeSynced &&
           other.syncError == this.syncError &&
+          other.synced == this.synced &&
           other.syncErrorMessage == this.syncErrorMessage);
 }
 
@@ -570,8 +700,11 @@ class ShiftsTableCompanion extends UpdateCompanion<ShiftsTableData> {
   final Value<String> idempotencyKey;
   final Value<DateTime> openedAt;
   final Value<DateTime?> closedAt;
-  final Value<bool> synced;
+  final Value<String?> closeIdempotencyKey;
+  final Value<bool> openSynced;
+  final Value<bool> closeSynced;
   final Value<bool> syncError;
+  final Value<bool> synced;
   final Value<String?> syncErrorMessage;
   final Value<int> rowid;
   const ShiftsTableCompanion({
@@ -584,8 +717,11 @@ class ShiftsTableCompanion extends UpdateCompanion<ShiftsTableData> {
     this.idempotencyKey = const Value.absent(),
     this.openedAt = const Value.absent(),
     this.closedAt = const Value.absent(),
-    this.synced = const Value.absent(),
+    this.closeIdempotencyKey = const Value.absent(),
+    this.openSynced = const Value.absent(),
+    this.closeSynced = const Value.absent(),
     this.syncError = const Value.absent(),
+    this.synced = const Value.absent(),
     this.syncErrorMessage = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -599,8 +735,11 @@ class ShiftsTableCompanion extends UpdateCompanion<ShiftsTableData> {
     required String idempotencyKey,
     required DateTime openedAt,
     this.closedAt = const Value.absent(),
-    this.synced = const Value.absent(),
+    this.closeIdempotencyKey = const Value.absent(),
+    this.openSynced = const Value.absent(),
+    this.closeSynced = const Value.absent(),
     this.syncError = const Value.absent(),
+    this.synced = const Value.absent(),
     this.syncErrorMessage = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -619,8 +758,11 @@ class ShiftsTableCompanion extends UpdateCompanion<ShiftsTableData> {
     Expression<String>? idempotencyKey,
     Expression<DateTime>? openedAt,
     Expression<DateTime>? closedAt,
-    Expression<bool>? synced,
+    Expression<String>? closeIdempotencyKey,
+    Expression<bool>? openSynced,
+    Expression<bool>? closeSynced,
     Expression<bool>? syncError,
+    Expression<bool>? synced,
     Expression<String>? syncErrorMessage,
     Expression<int>? rowid,
   }) {
@@ -635,8 +777,12 @@ class ShiftsTableCompanion extends UpdateCompanion<ShiftsTableData> {
       if (idempotencyKey != null) 'idempotency_key': idempotencyKey,
       if (openedAt != null) 'opened_at': openedAt,
       if (closedAt != null) 'closed_at': closedAt,
-      if (synced != null) 'synced': synced,
+      if (closeIdempotencyKey != null)
+        'close_idempotency_key': closeIdempotencyKey,
+      if (openSynced != null) 'open_synced': openSynced,
+      if (closeSynced != null) 'close_synced': closeSynced,
       if (syncError != null) 'sync_error': syncError,
+      if (synced != null) 'synced': synced,
       if (syncErrorMessage != null) 'sync_error_message': syncErrorMessage,
       if (rowid != null) 'rowid': rowid,
     });
@@ -652,8 +798,11 @@ class ShiftsTableCompanion extends UpdateCompanion<ShiftsTableData> {
     Value<String>? idempotencyKey,
     Value<DateTime>? openedAt,
     Value<DateTime?>? closedAt,
-    Value<bool>? synced,
+    Value<String?>? closeIdempotencyKey,
+    Value<bool>? openSynced,
+    Value<bool>? closeSynced,
     Value<bool>? syncError,
+    Value<bool>? synced,
     Value<String?>? syncErrorMessage,
     Value<int>? rowid,
   }) {
@@ -667,8 +816,11 @@ class ShiftsTableCompanion extends UpdateCompanion<ShiftsTableData> {
       idempotencyKey: idempotencyKey ?? this.idempotencyKey,
       openedAt: openedAt ?? this.openedAt,
       closedAt: closedAt ?? this.closedAt,
-      synced: synced ?? this.synced,
+      closeIdempotencyKey: closeIdempotencyKey ?? this.closeIdempotencyKey,
+      openSynced: openSynced ?? this.openSynced,
+      closeSynced: closeSynced ?? this.closeSynced,
       syncError: syncError ?? this.syncError,
+      synced: synced ?? this.synced,
       syncErrorMessage: syncErrorMessage ?? this.syncErrorMessage,
       rowid: rowid ?? this.rowid,
     );
@@ -704,11 +856,22 @@ class ShiftsTableCompanion extends UpdateCompanion<ShiftsTableData> {
     if (closedAt.present) {
       map['closed_at'] = Variable<DateTime>(closedAt.value);
     }
-    if (synced.present) {
-      map['synced'] = Variable<bool>(synced.value);
+    if (closeIdempotencyKey.present) {
+      map['close_idempotency_key'] = Variable<String>(
+        closeIdempotencyKey.value,
+      );
+    }
+    if (openSynced.present) {
+      map['open_synced'] = Variable<bool>(openSynced.value);
+    }
+    if (closeSynced.present) {
+      map['close_synced'] = Variable<bool>(closeSynced.value);
     }
     if (syncError.present) {
       map['sync_error'] = Variable<bool>(syncError.value);
+    }
+    if (synced.present) {
+      map['synced'] = Variable<bool>(synced.value);
     }
     if (syncErrorMessage.present) {
       map['sync_error_message'] = Variable<String>(syncErrorMessage.value);
@@ -731,8 +894,11 @@ class ShiftsTableCompanion extends UpdateCompanion<ShiftsTableData> {
           ..write('idempotencyKey: $idempotencyKey, ')
           ..write('openedAt: $openedAt, ')
           ..write('closedAt: $closedAt, ')
-          ..write('synced: $synced, ')
+          ..write('closeIdempotencyKey: $closeIdempotencyKey, ')
+          ..write('openSynced: $openSynced, ')
+          ..write('closeSynced: $closeSynced, ')
           ..write('syncError: $syncError, ')
+          ..write('synced: $synced, ')
           ..write('syncErrorMessage: $syncErrorMessage, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -3461,8 +3627,11 @@ typedef $$ShiftsTableTableCreateCompanionBuilder =
       required String idempotencyKey,
       required DateTime openedAt,
       Value<DateTime?> closedAt,
-      Value<bool> synced,
+      Value<String?> closeIdempotencyKey,
+      Value<bool> openSynced,
+      Value<bool> closeSynced,
       Value<bool> syncError,
+      Value<bool> synced,
       Value<String?> syncErrorMessage,
       Value<int> rowid,
     });
@@ -3477,8 +3646,11 @@ typedef $$ShiftsTableTableUpdateCompanionBuilder =
       Value<String> idempotencyKey,
       Value<DateTime> openedAt,
       Value<DateTime?> closedAt,
-      Value<bool> synced,
+      Value<String?> closeIdempotencyKey,
+      Value<bool> openSynced,
+      Value<bool> closeSynced,
       Value<bool> syncError,
+      Value<bool> synced,
       Value<String?> syncErrorMessage,
       Value<int> rowid,
     });
@@ -3537,13 +3709,28 @@ class $$ShiftsTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<bool> get synced => $composableBuilder(
-    column: $table.synced,
+  ColumnFilters<String> get closeIdempotencyKey => $composableBuilder(
+    column: $table.closeIdempotencyKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get openSynced => $composableBuilder(
+    column: $table.openSynced,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get closeSynced => $composableBuilder(
+    column: $table.closeSynced,
     builder: (column) => ColumnFilters(column),
   );
 
   ColumnFilters<bool> get syncError => $composableBuilder(
     column: $table.syncError,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get synced => $composableBuilder(
+    column: $table.synced,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3607,13 +3794,28 @@ class $$ShiftsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<bool> get synced => $composableBuilder(
-    column: $table.synced,
+  ColumnOrderings<String> get closeIdempotencyKey => $composableBuilder(
+    column: $table.closeIdempotencyKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get openSynced => $composableBuilder(
+    column: $table.openSynced,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get closeSynced => $composableBuilder(
+    column: $table.closeSynced,
     builder: (column) => ColumnOrderings(column),
   );
 
   ColumnOrderings<bool> get syncError => $composableBuilder(
     column: $table.syncError,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get synced => $composableBuilder(
+    column: $table.synced,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -3667,11 +3869,26 @@ class $$ShiftsTableTableAnnotationComposer
   GeneratedColumn<DateTime> get closedAt =>
       $composableBuilder(column: $table.closedAt, builder: (column) => column);
 
-  GeneratedColumn<bool> get synced =>
-      $composableBuilder(column: $table.synced, builder: (column) => column);
+  GeneratedColumn<String> get closeIdempotencyKey => $composableBuilder(
+    column: $table.closeIdempotencyKey,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get openSynced => $composableBuilder(
+    column: $table.openSynced,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get closeSynced => $composableBuilder(
+    column: $table.closeSynced,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<bool> get syncError =>
       $composableBuilder(column: $table.syncError, builder: (column) => column);
+
+  GeneratedColumn<bool> get synced =>
+      $composableBuilder(column: $table.synced, builder: (column) => column);
 
   GeneratedColumn<String> get syncErrorMessage => $composableBuilder(
     column: $table.syncErrorMessage,
@@ -3719,8 +3936,11 @@ class $$ShiftsTableTableTableManager
                 Value<String> idempotencyKey = const Value.absent(),
                 Value<DateTime> openedAt = const Value.absent(),
                 Value<DateTime?> closedAt = const Value.absent(),
-                Value<bool> synced = const Value.absent(),
+                Value<String?> closeIdempotencyKey = const Value.absent(),
+                Value<bool> openSynced = const Value.absent(),
+                Value<bool> closeSynced = const Value.absent(),
                 Value<bool> syncError = const Value.absent(),
+                Value<bool> synced = const Value.absent(),
                 Value<String?> syncErrorMessage = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ShiftsTableCompanion(
@@ -3733,8 +3953,11 @@ class $$ShiftsTableTableTableManager
                 idempotencyKey: idempotencyKey,
                 openedAt: openedAt,
                 closedAt: closedAt,
-                synced: synced,
+                closeIdempotencyKey: closeIdempotencyKey,
+                openSynced: openSynced,
+                closeSynced: closeSynced,
                 syncError: syncError,
+                synced: synced,
                 syncErrorMessage: syncErrorMessage,
                 rowid: rowid,
               ),
@@ -3749,8 +3972,11 @@ class $$ShiftsTableTableTableManager
                 required String idempotencyKey,
                 required DateTime openedAt,
                 Value<DateTime?> closedAt = const Value.absent(),
-                Value<bool> synced = const Value.absent(),
+                Value<String?> closeIdempotencyKey = const Value.absent(),
+                Value<bool> openSynced = const Value.absent(),
+                Value<bool> closeSynced = const Value.absent(),
                 Value<bool> syncError = const Value.absent(),
+                Value<bool> synced = const Value.absent(),
                 Value<String?> syncErrorMessage = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ShiftsTableCompanion.insert(
@@ -3763,8 +3989,11 @@ class $$ShiftsTableTableTableManager
                 idempotencyKey: idempotencyKey,
                 openedAt: openedAt,
                 closedAt: closedAt,
-                synced: synced,
+                closeIdempotencyKey: closeIdempotencyKey,
+                openSynced: openSynced,
+                closeSynced: closeSynced,
                 syncError: syncError,
+                synced: synced,
                 syncErrorMessage: syncErrorMessage,
                 rowid: rowid,
               ),

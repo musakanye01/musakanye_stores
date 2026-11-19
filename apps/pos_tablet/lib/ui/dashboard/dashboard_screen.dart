@@ -6,7 +6,7 @@ import 'package:pos_tablet/ui/shifts/shift_view_model.dart';
 import 'package:provider/provider.dart';
 
 class DashboardScreen extends StatefulWidget {
-  DashboardScreen({super.key});
+  const DashboardScreen({super.key});
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();

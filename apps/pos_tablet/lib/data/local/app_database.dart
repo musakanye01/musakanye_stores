@@ -33,7 +33,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 7;
 
   static QueryExecutor _openConnection() {
     return driftDatabase(name: 'pos_database');
@@ -45,7 +45,27 @@ class AppDatabase extends _$AppDatabase {
       onCreate: (migrator) async {
         await migrator.createAll();
       },
-      onUpgrade: (migrator, from, to) async {},
+      onUpgrade: (migrator, from, to) async {
+        if (from < 7) {
+          await migrator.addColumn(shiftsTable, shiftsTable.openSynced);
+
+          await migrator.addColumn(shiftsTable, shiftsTable.closeSynced);
+
+          await migrator.addColumn(shiftsTable, shiftsTable.synced);
+
+          await migrator.addColumn(
+            shiftsTable,
+            shiftsTable.closeIdempotencyKey,
+          );
+
+          await customStatement('''
+          UPDATE shifts
+          SET
+            open_synced = synced,
+            close_synced = synced
+        ''');
+        }
+      },
     );
   }
 }
