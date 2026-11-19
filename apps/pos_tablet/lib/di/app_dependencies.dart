@@ -1,3 +1,4 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:pos_tablet/data/local/app_database.dart';
 import 'package:pos_tablet/data/repository/bootsrap_repository.dart';
@@ -8,8 +9,13 @@ import 'package:pos_tablet/data/repository/shift_summary_repo.dart';
 import 'package:pos_tablet/data/repository/stock_repo.dart';
 import 'package:pos_tablet/data/source/bootstrap_service.dart';
 import 'package:pos_tablet/data/source/product_service.dart';
+import 'package:pos_tablet/data/source/sale_service.dart';
 import 'package:pos_tablet/data/source/shift_service.dart';
 import 'package:pos_tablet/data/source/stock_receiving_service.dart';
+import 'package:pos_tablet/data/sync/connectivity_service.dart';
+import 'package:pos_tablet/data/sync/sale_sync_service.dart';
+import 'package:pos_tablet/data/sync/shift_sync_service.dart';
+import 'package:pos_tablet/data/sync/sync_coordinator.dart';
 import 'package:shared_core/data/auth_repo.dart';
 import 'package:shared_core/data/auth_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -31,6 +37,10 @@ class AppDependencies {
   late final AppDatabase _db;
   late final BootstrapRepository _bootstrapRepository;
   late final BootstrapService _bootstrapService;
+  late final SyncCoordinator _syncCoordinator;
+  late final ShiftSyncService _shiftSyncService;
+  late final ConnectivityService _connectivityService;
+  late final SaleSyncService _saleSyncService;
 
   AppDependencies._();
 
@@ -68,6 +78,21 @@ class AppDependencies {
       _stockReceivingService,
     );
     _shiftSummaryRepository = ShiftSummaryRepositoryImpl(_db.salesDao);
+
+    _shiftSyncService = ShiftSyncServiceImp(
+      shiftService: _shiftService,
+      shiftsDao: _db.shiftsDao,
+    );
+    _connectivityService = ConnectivityServiceImpl(Connectivity());
+    _saleSyncService = SaleSyncServiceImpl(
+      _db.salesDao,
+      SaleServiceImp(_supabase.client),
+    );
+    _syncCoordinator = SyncCoordinatorImp(
+      shiftSyncService: _shiftSyncService,
+      connectivityService: _connectivityService,
+      salesSyncService: _saleSyncService,
+    );
   }
 
   // Getters
@@ -83,4 +108,8 @@ class AppDependencies {
   /// The local Drift database. Exposed so repositories and sync service
   /// can access DAOs directly via [db.shiftsDao], [db.salesDao], etc.
   AppDatabase get db => _db;
+
+  ShiftSyncService get shiftSyncService => _shiftSyncService;
+  SaleSyncService get saleSyncService => _saleSyncService;
+  ConnectivityService get connectivityService => _connectivityService;
 }

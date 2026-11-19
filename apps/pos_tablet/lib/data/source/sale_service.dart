@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
 import 'package:pos_tablet/data/source/sync_failure.dart';
 import 'package:pos_tablet/data/sync/model/pending_sale_sync.dart';
 import 'package:shared_core/domain/model/sale_line.dart'; // wherever SaleResult lives
@@ -20,18 +23,32 @@ class SaleServiceImp implements SaleService {
     required PendingSaleSync saleSync,
   }) async {
     try {
+      debugPrint('payment=${saleSync.sale.paymentMethod}');
+
+      debugPrint('tendered=${saleSync.sale.tenderedCents}');
+
+      debugPrint(jsonEncode(saleSync.items));
+      final mappedItems = saleSync.items.map((line) {
+        return {
+          'variant_id': line.variantId,
+          'quantity': line.quantity,
+          'unit_price_cents': line.unitPriceCents,
+        };
+      }).toList();
       final response = await _client.rpc(
         'sync_offline_sale',
         params: {
-          'p_sale_id': saleSync.sale..id,
-          'p_idempotency_key': saleSync.sale..idempotencyKey,
-          'p_shift_id': saleSync.sale..shiftId,
+          'p_sale_id': saleSync.sale.id,
+          'p_idempotency_key': saleSync.sale.idempotencyKey,
+          'p_shift_id': saleSync.sale.shiftId,
           'p_device_id': "1", //todo
-          'p_payment_method': saleSync.sale..paymentMethod,
-          'p_created_at': saleSync.sale..createdAt.toIso8601String(),
-          'p_total_cents': saleSync.sale..totalCents,
-          'p_tendered_cents': saleSync.sale..tenderedCents,
-          'p_items': saleSync.items,
+          'p_payment_method': saleSync.sale.paymentMethod,
+          'p_created_at': saleSync.sale.createdAt.toIso8601String(),
+          'p_total_cents': saleSync.sale.totalCents,
+          'p_tendered_cents': saleSync.sale.paymentMethod == 'cash'
+              ? saleSync.sale.tenderedCents
+              : null,
+          'p_items': mappedItems,
         },
       );
       return Result.ok(SaleResult.fromJson(response as Map<String, dynamic>));

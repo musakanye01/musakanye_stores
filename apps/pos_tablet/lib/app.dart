@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pos_tablet/data/sync/sync_coordinator.dart';
 import 'package:pos_tablet/di/app_dependencies.dart';
 import 'package:pos_tablet/ui/bootstrap/bootstrap_view_model.dart';
 import 'package:pos_tablet/ui/sales/viewmodel/cart_view_model.dart';
@@ -59,6 +60,14 @@ class PosTabletApp extends StatelessWidget {
             ctx.read<ShiftViewModel>(),
           ),
         ),
+
+        ChangeNotifierProvider<SyncCoordinatorImp>(
+          create: (ctx) => SyncCoordinatorImp(
+            shiftSyncService: dependencies.shiftSyncService,
+            connectivityService: dependencies.connectivityService,
+            salesSyncService: dependencies.saleSyncService,
+          ),
+        ),
       ],
       child: const _AppView(),
     );
@@ -77,6 +86,8 @@ class _AppViewState extends State<_AppView> {
   late final ShiftViewModel _shift;
   late final BootstrapViewModel _bootstrapViewModel;
   late final GoRouter _router;
+  late final SyncCoordinator _syncCoordinator;
+  bool _syncInitialized = false;
 
   @override
   void initState() {
@@ -84,18 +95,36 @@ class _AppViewState extends State<_AppView> {
     _auth = context.read<AuthViewModel>();
     _shift = context.read<ShiftViewModel>();
     _bootstrapViewModel = context.read<BootstrapViewModel>();
+    _syncCoordinator = context.read<SyncCoordinatorImp>();
 
     _router = createRouter(_auth, _bootstrapViewModel, _shift);
 
     _auth.addListener(_onAuthChanged);
 
     _bootstrapViewModel.addListener(_onBootstrapChanged);
+    _shift.addListener(_onShiftChanged);
     _onAuthChanged(); // auth might already be resolved by the time we get here
   }
 
   void _onBootstrapChanged() {
     if (_bootstrapViewModel.isReady && _shift.state == ShiftState.unknown) {
       _shift.restoreShift();
+    }
+  }
+
+  Future<void> _onShiftChanged() async {
+    if (_syncInitialized) {
+      return;
+    }
+
+    final state = _shift.state;
+
+    if (state == ShiftState.open ||
+        state == ShiftState.none ||
+        state == ShiftState.unknown) {
+      _syncInitialized = true;
+
+      await _syncCoordinator.initialize();
     }
   }
 
@@ -116,6 +145,7 @@ class _AppViewState extends State<_AppView> {
     _auth.removeListener(_onAuthChanged);
     _bootstrapViewModel.removeListener(_onBootstrapChanged);
     _router.dispose();
+    _shift.removeListener(_onShiftChanged);
     super.dispose();
   }
 

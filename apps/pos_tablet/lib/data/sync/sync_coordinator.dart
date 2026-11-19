@@ -54,6 +54,7 @@ class SyncCoordinatorImp extends ChangeNotifier implements SyncCoordinator {
     _syncing = true;
 
     try {
+      print("Triggering Sync");
       _status = SyncStatus.syncing;
       notifyListeners();
 

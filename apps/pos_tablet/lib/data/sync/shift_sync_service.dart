@@ -16,6 +16,7 @@ class ShiftSyncServiceImp implements ShiftSyncService {
 
   @override
   Future<void> syncOpenShifts() async {
+    print("Sync Open Shifts");
     final shifts = await _shiftsDao.getUnsyncedOpenShifts();
 
     for (final shift in shifts) {
@@ -33,6 +34,7 @@ class ShiftSyncServiceImp implements ShiftSyncService {
 
   @override
   Future<void> syncClosedShifts() async {
+    print("Sync Close Shifts");
     final shifts = await _shiftsDao.getUnsyncedClosedShifts();
 
     for (final shift in shifts) {

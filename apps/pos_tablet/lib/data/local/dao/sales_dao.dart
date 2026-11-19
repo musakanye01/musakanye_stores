@@ -143,10 +143,10 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
             ..limit(limit, offset: offset))
           .get();
 
-  /// Pending sales only. Permanently failed ones wait for an explicit retry.
+  /// Pending sales only.
   Future<List<SalesTableData>> getUnsynced() =>
       (select(salesTable)
-            ..where((t) => t.synced.equals(false) & t.syncError.equals(false))
+            ..where((t) => t.synced.equals(false))
             ..orderBy([
               (t) => OrderingTerm.asc(t.createdAt),
               (t) => OrderingTerm.desc(const CustomExpression<int>('rowid')),
