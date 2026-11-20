@@ -4,6 +4,7 @@ import 'package:pos_tablet/data/local/dao/sales_dao.dart';
 import 'package:pos_tablet/data/local/dao/shifts_dao.dart';
 import 'package:shared_core/domain/model/sale_history.dart';
 import 'package:shared_core/domain/model/sale_line.dart';
+import 'package:shared_core/domain/model/sale_line_item.dart';
 import 'package:shared_core/domain/model/sync_status.dart';
 import 'package:shared_core/util/result.dart';
 import 'package:shared_core/domain/model/sale_receipt.dart';
@@ -137,6 +138,11 @@ class SaleRepositoryImpl implements SaleRepository {
       limit: limit,
       offset: offset,
     );
+
+    final linesBySale = await _salesDao.getLinesWithProductsForSales([
+      for (final s in rows) s.id,
+    ]);
+
     return [
       for (final s in rows)
         SaleHistory(
@@ -147,6 +153,10 @@ class SaleRepositoryImpl implements SaleRepository {
           createdAt: s.createdAt,
           paymentMethod: s.paymentMethod,
           syncStatus: syncStatusOf(synced: s.synced, syncError: s.syncError),
+          items: [
+            for (final r in linesBySale[s.id] ?? const [])
+              _toLineItem(r.line, r.product),
+          ],
         ),
     ];
   }
@@ -175,6 +185,24 @@ class SaleRepositoryImpl implements SaleRepository {
             unitPriceCents: r.line.unitPriceCents,
           ),
       ],
+    );
+  }
+
+  SaleLineItem _toLineItem(
+    SaleLinesTableData line,
+    CatalogueTableData? product,
+  ) {
+    final item = product == null ? null : CatalogueDao.toDomain(product);
+
+    return SaleLineItem(
+      id: line.id,
+      saleId: line.saleId,
+      variantId: line.variantId,
+      productName: item?.productName ?? 'Unknown item',
+      variantDescription: item?.variantLabel,
+      quantity: line.quantity,
+      unitPriceCents: line.unitPriceCents,
+      lineTotalCents: line.quantity * line.unitPriceCents,
     );
   }
 }

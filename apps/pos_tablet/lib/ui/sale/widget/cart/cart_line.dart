@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pos_tablet/ui/sales/cart_item.dart';
+import 'package:pos_tablet/ui/sale/model/cart_item.dart';
 import 'package:pos_tablet/ui/shared/money.dart';
 
 class CartLine extends StatelessWidget {
@@ -24,8 +24,11 @@ class CartLine extends StatelessWidget {
     return Card(
       margin: EdgeInsets.zero,
       elevation: 0,
-      color: colors.surfaceContainerLow,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      color: colors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: colors.outlineVariant),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: LayoutBuilder(

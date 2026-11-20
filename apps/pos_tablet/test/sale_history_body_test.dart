@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pos_tablet/data/repository/sale_repo.dart';
-import 'package:pos_tablet/ui/sales/sales_history_screen.dart';
-import 'package:pos_tablet/ui/sales/viewmodel/sales_history_view_model.dart';
+import 'package:pos_tablet/ui/sale_history/sales_history_screen.dart';
+import 'package:pos_tablet/ui/sale_history/viewmodel/sales_history_view_model.dart';
 import 'package:pos_tablet/ui/shifts/shift_view_model.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_core/domain/model/sale_history.dart';
@@ -12,7 +12,6 @@ import 'package:shared_core/domain/model/sync_status.dart';
 import 'package:shared_core/util/result.dart';
 
 import 'lib/data/fake_shift_repo.dart';
-
 
 SaleHistory sale(String id, {String method = 'cash', int total = 500}) =>
     SaleHistory.fromJson({

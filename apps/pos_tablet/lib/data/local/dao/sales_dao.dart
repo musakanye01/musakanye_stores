@@ -176,6 +176,41 @@ class SalesDao extends DatabaseAccessor<AppDatabase> with _$SalesDaoMixin {
     ];
   }
 
+  Future<
+    Map<String, List<({SaleLinesTableData line, CatalogueTableData? product})>>
+  >
+  getLinesWithProductsForSales(List<String> saleIds) async {
+    if (saleIds.isEmpty) return {};
+
+    final query =
+        select(saleLinesTable).join([
+            leftOuterJoin(
+              catalogueTable,
+              catalogueTable.variantId.equalsExp(saleLinesTable.variantId),
+            ),
+          ])
+          ..where(saleLinesTable.saleId.isIn(saleIds))
+          // Qualified: a bare `rowid` is ambiguous in a join.
+          ..orderBy([
+            OrderingTerm.asc(const CustomExpression<int>('sale_lines.rowid')),
+          ]);
+
+    final grouped =
+        <
+          String,
+          List<({SaleLinesTableData line, CatalogueTableData? product})>
+        >{};
+
+    for (final r in await query.get()) {
+      final line = r.readTable(saleLinesTable);
+      grouped.putIfAbsent(line.saleId, () => []).add((
+        line: line,
+        product: r.readTableOrNull(catalogueTable),
+      ));
+    }
+    return grouped;
+  }
+
   Future<List<PendingSaleSync>> getPendingSalesForSync() async {
     final sales = await getUnsynced();
 

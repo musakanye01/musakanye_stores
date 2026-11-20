@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:pos_tablet/ui/sales/viewmodel/sales_history_view_model.dart';
-import 'package:pos_tablet/ui/shared/money.dart';
-import 'package:pos_tablet/ui/shared/sync_badge.dart';
+import 'package:pos_tablet/ui/sale_history/viewmodel/sales_history_view_model.dart';
+import 'package:pos_tablet/ui/sale_history/widget/sale_history_tile.dart';
 import 'package:pos_tablet/ui/shared/tablet_scaffold.dart';
 import 'package:provider/provider.dart';
 
@@ -26,10 +25,10 @@ class _SalesHistoryScreenState extends State<SalesHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return TabletScaffold(
-      child: const Padding(
-        padding: EdgeInsets.all(24),
-        child: SalesHistoryBody(),
+    return const TabletScaffold(
+      // Same outer structure as the sale screen: SafeArea + 20dp padding.
+      child: SafeArea(
+        child: Padding(padding: EdgeInsets.all(20), child: SalesHistoryBody()),
       ),
     );
   }
@@ -44,15 +43,15 @@ class SalesHistoryBody extends StatefulWidget {
 }
 
 class _SalesHistoryBodyState extends State<SalesHistoryBody> {
+  late final SalesHistoryViewModel _viewModel;
   late final TextEditingController _search;
 
   @override
   void initState() {
     super.initState();
+    _viewModel = context.read<SalesHistoryViewModel>();
     // The view model keeps the query across navigation, so the field must too.
-    _search = TextEditingController(
-      text: context.read<SalesHistoryViewModel>().searchQuery,
-    );
+    _search = TextEditingController(text: _viewModel.searchQuery);
   }
 
   @override
@@ -63,33 +62,58 @@ class _SalesHistoryBodyState extends State<SalesHistoryBody> {
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<SalesHistoryViewModel>();
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
 
+    // The title and search field don't depend on the list, so only
+    // _SalesList (below) watches the view model.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Sales History',
-          style: Theme.of(context).textTheme.headlineMedium,
-        ),
+        Text('Sales History', style: theme.textTheme.headlineMedium),
         const SizedBox(height: 16),
+
+        // Same field styling as the catalogue search.
         TextField(
           controller: _search,
-          onChanged: vm.setSearchQuery,
-          decoration: const InputDecoration(
-            prefixIcon: Icon(Icons.search),
-            labelText: 'Search loaded sales',
-            hintText: 'Receipt ID, payment method, status or cents',
-            border: OutlineInputBorder(),
+          onChanged: _viewModel.setSearchQuery,
+          textInputAction: TextInputAction.search,
+          decoration: InputDecoration(
+            hintText: 'Search loaded sales by receipt ID, payment method, status or cents',
+            prefixIcon: const Icon(Icons.search),
+            filled: true,
+            fillColor: colors.surfaceContainerLow,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(color: colors.outlineVariant),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(color: colors.primary, width: 1.5),
+            ),
           ),
         ),
         const SizedBox(height: 16),
-        Expanded(child: _buildBody(context, vm)),
+
+        const Expanded(child: _SalesList()),
       ],
     );
   }
+}
 
-  Widget _buildBody(BuildContext context, SalesHistoryViewModel vm) {
+class _SalesList extends StatelessWidget {
+  const _SalesList();
+
+  @override
+  Widget build(BuildContext context) {
+    final vm = context.watch<SalesHistoryViewModel>();
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
     // Block the screen only on the very first load. Reloads keep the list visible.
     if (vm.isLoading && vm.sales.isEmpty) {
       return const Center(child: CircularProgressIndicator());
@@ -107,6 +131,9 @@ class _SalesHistoryBodyState extends State<SalesHistoryBody> {
           vm.sales.isEmpty
               ? 'No sales in this shift yet.'
               : 'No sales match your search.',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: colors.onSurfaceVariant,
+          ),
         ),
       );
     }
@@ -115,29 +142,15 @@ class _SalesHistoryBodyState extends State<SalesHistoryBody> {
       children: [
         Expanded(
           child: ListView.separated(
+            padding: const EdgeInsets.only(bottom: 8),
             itemCount: sales.length,
-            separatorBuilder: (_, _) => const Divider(height: 1),
+            // Same 10dp rhythm as the cart lines.
+            separatorBuilder: (_, _) => const SizedBox(height: 10),
             itemBuilder: (context, index) {
               final sale = sales[index];
 
-              return ListTile(
-                leading: const CircleAvatar(child: Icon(Icons.receipt_long)),
-                title: Text(
-                  formatUsd(sale.totalCents),
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [],
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SyncBadge(sale.syncStatus),
-                    const SizedBox(width: 8),
-                    const Icon(Icons.chevron_right),
-                  ],
-                ),
+              return SaleHistoryTile(
+                sale: sale,
                 onTap: () => context.goNamed(
                   'receipt',
                   pathParameters: {'saleId': sale.id},
@@ -148,15 +161,15 @@ class _SalesHistoryBodyState extends State<SalesHistoryBody> {
         ),
         if (vm.errorMessage != null)
           Padding(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.only(top: 8),
             child: Text(
               vm.errorMessage!,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
+              style: theme.textTheme.bodySmall?.copyWith(color: colors.error),
             ),
           ),
         if (vm.hasMore || vm.isLoadingMore)
           Padding(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.only(top: 8),
             child: OutlinedButton(
               onPressed: vm.isLoadingMore ? null : vm.loadMore,
               child: vm.isLoadingMore
@@ -181,16 +194,21 @@ class _ErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
-            Icons.error_outline,
-            size: 40,
-          ), // was cloud_off; this is a local read now
+          // Was cloud_off; this is a local read now.
+          Icon(Icons.error_outline, size: 40, color: colors.error),
           const SizedBox(height: 12),
-          Text(message, textAlign: TextAlign.center),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium,
+          ),
           const SizedBox(height: 12),
           FilledButton(onPressed: onRetry, child: const Text('Retry')),
         ],

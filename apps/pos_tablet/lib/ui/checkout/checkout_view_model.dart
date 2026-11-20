@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pos_tablet/data/repository/sale_repo.dart';
-import 'package:pos_tablet/ui/sales/cart_item.dart';
+import 'package:pos_tablet/ui/sale/model/cart_item.dart';
 import 'package:shared_core/domain/model/sale_line.dart';
 import 'package:shared_core/util/command.dart';
 import 'package:shared_core/util/result.dart';

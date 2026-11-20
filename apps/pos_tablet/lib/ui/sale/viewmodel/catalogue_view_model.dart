@@ -40,15 +40,41 @@ class CatalogueViewModel extends ChangeNotifier {
   List<CatalogueItem> get items => _items;
   String get searchQuery => _searchQuery;
 
+  // Optimize search for performance.
   List<CatalogueItem> get filteredItems {
     final query = _searchQuery.trim().toLowerCase();
+
     if (query.isEmpty) return _items;
 
-    return _items.where((i) {
-      return i.productName.toLowerCase().contains(query) ||
-          (i.sku?.toLowerCase().contains(query) ?? false) ||
-          (i.categoryName?.toLowerCase().contains(query) ?? false);
-    }).toList();
+    final exact = <CatalogueItem>[];
+    final fuzzy = <CatalogueItem>[];
+
+    for (final item in _items) {
+      final name = item.productName.toLowerCase();
+
+      if (name.contains(query)) {
+        exact.add(item);
+      } else if (fuzzyMatch(name, query)) {
+        fuzzy.add(item);
+      }
+    }
+
+    return [...exact, ...fuzzy];
+  }
+
+  bool fuzzyMatch(String text, String query) {
+    text = text.toLowerCase();
+    query = query.toLowerCase();
+
+    int qi = 0;
+
+    for (int i = 0; i < text.length && qi < query.length; i++) {
+      if (text[i] == query[qi]) {
+        qi++;
+      }
+    }
+
+    return qi == query.length;
   }
 
   void setSearchQuery(String value) {

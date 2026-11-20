@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pos_tablet/ui/sales/cart_item.dart';
-import 'package:pos_tablet/ui/sales/viewmodel/cart_view_model.dart';
+import 'package:pos_tablet/ui/sale/model/cart_item.dart';
+import 'package:pos_tablet/ui/sale/viewmodel/cart_view_model.dart';
 import 'package:shared_core/domain/model/catalogue_item.dart';
 
 CatalogueItem item(

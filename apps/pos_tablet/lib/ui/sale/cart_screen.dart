@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pos_tablet/ui/sales/widget/cart/cart_content.dart';
+import 'package:pos_tablet/ui/sale/widget/cart/cart_content.dart';
 
 import '../shared/tablet_scaffold.dart';
 

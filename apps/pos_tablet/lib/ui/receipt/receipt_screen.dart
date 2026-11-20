@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pos_tablet/di/app_dependencies.dart';
-import 'package:pos_tablet/ui/sales/receipt_text.dart';
-import 'package:pos_tablet/ui/sales/viewmodel/receipt_view_model.dart';
+import 'package:pos_tablet/ui/receipt/receipt_text.dart';
+import 'package:pos_tablet/ui/receipt/receipt_view_model.dart';
 import 'package:pos_tablet/ui/shared/format.dart';
 import 'package:pos_tablet/ui/shared/money.dart';
 import 'package:pos_tablet/ui/shared/sync_badge.dart';

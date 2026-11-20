@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pos_tablet/data/repository/product_repo.dart';
-import 'package:pos_tablet/ui/sales/viewmodel/catalogue_view_model.dart';
+import 'package:pos_tablet/ui/sale/viewmodel/catalogue_view_model.dart';
 import 'package:shared_core/domain/model/catalogue_item.dart';
 
 import 'lib/model/fake_catalogue_item.dart';

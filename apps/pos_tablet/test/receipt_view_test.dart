@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pos_tablet/ui/sales/receipt_screen.dart';
+import 'package:pos_tablet/ui/receipt/receipt_screen.dart';
 import 'package:shared_core/domain/model/sale_receipt.dart';
 import 'package:shared_core/domain/model/sync_status.dart';
 

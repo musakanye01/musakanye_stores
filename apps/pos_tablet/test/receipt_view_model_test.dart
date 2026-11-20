@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pos_tablet/data/repository/sale_repo.dart';
-import 'package:pos_tablet/ui/sales/viewmodel/receipt_view_model.dart';
+import 'package:pos_tablet/ui/receipt/receipt_view_model.dart';
 import 'package:shared_core/domain/model/sale_receipt.dart';
 
 SaleReceipt makeReceipt() => SaleReceipt(

@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pos_tablet/data/repository/sale_repo.dart';
-import 'package:pos_tablet/ui/sales/viewmodel/sales_history_view_model.dart';
+import 'package:pos_tablet/ui/sale_history/viewmodel/sales_history_view_model.dart';
 import 'package:pos_tablet/ui/shifts/shift_view_model.dart';
 import 'package:shared_core/domain/model/sale_history.dart';
 import 'package:shared_core/util/result.dart';

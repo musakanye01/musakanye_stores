@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pos_tablet/ui/sales/receipt_text.dart';
+import 'package:pos_tablet/ui/receipt/receipt_text.dart';
 import 'package:shared_core/domain/model/sale_receipt.dart';
 
 SaleReceipt receipt({String method = 'cash', int tendered = 1500}) =>

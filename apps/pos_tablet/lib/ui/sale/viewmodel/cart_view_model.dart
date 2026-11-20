@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:pos_tablet/ui/sales/cart_item.dart';
+import 'package:pos_tablet/ui/sale/model/cart_item.dart';
 import 'package:shared_core/domain/model/catalogue_item.dart';
 
 class CartViewModel extends ChangeNotifier {
