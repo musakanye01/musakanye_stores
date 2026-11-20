@@ -44,7 +44,9 @@ class SalesHistoryViewModel extends ChangeNotifier {
     if (query.isEmpty) return sales;
 
     return _sales.where((sale) {
-      return sale.id.toLowerCase().contains(query) ||
+      return sale.items.any(
+            (item) => item.productName.toLowerCase().contains(query),
+          ) ||
           sale.paymentMethod.toLowerCase().contains(query) ||
           sale.status.toLowerCase().contains(query) ||
           sale.totalCents.toString().contains(query);
