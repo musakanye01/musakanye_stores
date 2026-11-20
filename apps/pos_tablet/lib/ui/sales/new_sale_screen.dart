@@ -10,7 +10,9 @@ import 'package:shared_core/domain/model/catalogue_item.dart';
 import '../shared/tablet_scaffold.dart';
 
 class NewSaleScreen extends StatefulWidget {
-  const NewSaleScreen({super.key});
+  const NewSaleScreen({super.key, this.showCartOnOpen = false});
+
+  final bool showCartOnOpen;
 
   @override
   State<NewSaleScreen> createState() => _NewSaleScreenState();
@@ -21,6 +23,31 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
   late final TextEditingController _searchController;
 
   bool _cartPanelOpen = false;
+
+  bool _initialCartHandled = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (_initialCartHandled || !widget.showCartOnOpen) return;
+
+    _initialCartHandled = true;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      final cart = context.read<CartViewModel>();
+
+      if (cart.isEmpty) return;
+
+      if (_isLandscape) {
+        setState(() => _cartPanelOpen = true);
+      } else {
+        _openCart();
+      }
+    });
+  }
 
   @override
   void initState() {
@@ -68,8 +95,10 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
       useSafeArea: true,
       showDragHandle: true,
       backgroundColor: Theme.of(context).colorScheme.surface,
-      builder: (_) =>
-          FractionallySizedBox(heightFactor: 0.9, child: const CartContent()),
+      builder: (sheetContext) => FractionallySizedBox(
+        heightFactor: 0.7,
+        child: CartContent(onClose: () => Navigator.of(sheetContext).pop()),
+      ),
     );
   }
 
@@ -128,40 +157,26 @@ class _NewSaleScreenState extends State<NewSaleScreen> {
               const SizedBox(height: 16),
 
               Expanded(
-                child: Stack(
+                child: Row(
                   children: [
-                    Positioned.fill(child: _buildBody(context, vm, cart)),
-
-                    // Landscape cart panel overlays the catalogue.
-                    if (isLandscape) ...[
-                      if (_cartPanelOpen)
-                        Positioned.fill(
-                          child: GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: _closeCartPanel,
-                            child: ColoredBox(
-                              color: Colors.black.withValues(alpha: 0.24),
-                            ),
-                          ),
-                        ),
-                      AnimatedPositioned(
-                        duration: const Duration(milliseconds: 280),
-                        curve: Curves.easeOutCubic,
-                        top: 0,
-                        bottom: 0,
-                        left: _cartPanelOpen ? 0 : -420,
-                        width: 400,
-                        child: Material(
-                          elevation: 12,
-                          color: Theme.of(context).colorScheme.surface,
-                          borderRadius: const BorderRadius.horizontal(
-                            right: Radius.circular(20),
-                          ),
-                          clipBehavior: Clip.antiAlias,
-                          child: CartContent(onClose: _closeCartPanel),
-                        ),
+                    SizedBox(width: 8),
+                    if (isLandscape && _cartPanelOpen)
+                      VerticalDivider(
+                        width: 1,
+                        color: Theme.of(context).colorScheme.outlineVariant,
                       ),
-                    ],
+                    Expanded(child: _buildBody(context, vm, cart)),
+                    SizedBox(width: 8),
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 250),
+                      curve: Curves.easeInOut,
+                      width: isLandscape && _cartPanelOpen ? 380 : 0,
+                      child: isLandscape && _cartPanelOpen
+                          ? ClipRect(
+                              child: CartContent(onClose: _closeCartPanel),
+                            )
+                          : const SizedBox.shrink(),
+                    ),
                   ],
                 ),
               ),

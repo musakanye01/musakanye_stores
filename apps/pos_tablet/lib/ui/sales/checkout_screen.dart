@@ -135,43 +135,54 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     // Rebuild when the shared cart changes, in case we're using it.
     context.watch<CartViewModel>();
 
-    return TabletScaffold(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                IconButton(
-                  tooltip: 'Back to cart',
-                  onPressed: isProcessing
-                      ? null
-                      : () => context.goNamed('cart'),
-                  icon: const Icon(Icons.arrow_back),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Checkout',
-                  style: Theme.of(context).textTheme.headlineMedium,
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            Expanded(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop || isProcessing) return;
+
+        context.goNamed('sales', queryParameters: {'showCart': 'true'});
+      },
+      child: TabletScaffold(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  Expanded(flex: 3, child: _buildSummary(context)),
-                  const SizedBox(width: 20),
-                  Expanded(
-                    flex: 2,
-                    child: _buildPayment(context, isProcessing),
+                  IconButton(
+                    tooltip: 'Back to cart',
+                    onPressed: isProcessing
+                        ? null
+                        : () => context.goNamed(
+                            'sales',
+                            queryParameters: {'showCart': 'true'},
+                          ),
+                    icon: const Icon(Icons.arrow_back),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Checkout',
+                    style: Theme.of(context).textTheme.headlineMedium,
                   ),
                 ],
               ),
-            ),
-          ],
+              const SizedBox(height: 24),
+              Expanded(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(flex: 3, child: _buildSummary(context)),
+                    const SizedBox(width: 20),
+                    Expanded(
+                      flex: 2,
+                      child: _buildPayment(context, isProcessing),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

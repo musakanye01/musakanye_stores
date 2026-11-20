@@ -144,7 +144,9 @@ GoRouter createRouter(
     GoRoute(
       path: '/sales',
       name: 'sales',
-      builder: (context, state) => const NewSaleScreen(),
+      builder: (context, state) => NewSaleScreen(
+        showCartOnOpen: state.uri.queryParameters['showCart'] == 'true',
+      ),
     ),
 
     GoRoute(

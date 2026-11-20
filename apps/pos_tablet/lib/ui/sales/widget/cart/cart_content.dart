@@ -17,97 +17,97 @@ class CartContent extends StatelessWidget {
     final vm = context.watch<CartViewModel>();
     final theme = Theme.of(context);
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text('Your Cart', style: theme.textTheme.headlineSmall),
-              ),
-              Text('${vm.itemCount} items', style: theme.textTheme.titleSmall),
-              const SizedBox(width: 8),
-              IconButton(
-                tooltip: onClose == null ? 'Back to sale' : 'Close cart',
-                onPressed: onClose ?? () => context.goNamed('sales'),
-                icon: Icon(onClose == null ? Icons.arrow_back : Icons.close),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
+    return Card(
+      margin: EdgeInsets.zero,
+      elevation: 0,
+      color: theme.colorScheme.surface,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: theme.colorScheme.outlineVariant, width: 1),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(),
+            const SizedBox(height: 12),
 
-          Expanded(
-            child: vm.isEmpty
-                ? _buildEmptyCart(context)
-                : ListView.separated(
-                    itemCount: vm.items.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 10),
-                    itemBuilder: (context, index) {
-                      final item = vm.items[index];
+            Expanded(
+              child: vm.isEmpty
+                  ? _buildEmptyCart(context)
+                  : ListView.separated(
+                      itemCount: vm.items.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 10),
+                      itemBuilder: (context, index) {
+                        final item = vm.items[index];
 
-                      return CartLine(
-                        item: item,
-                        onDecrease: () => vm.decrease(item.variantId),
-                        onIncrease: () {
-                          final increased = vm.increase(item.variantId);
+                        return CartLine(
+                          item: item,
+                          onDecrease: () => vm.decrease(item.variantId),
+                          onIncrease: () {
+                            final increased = vm.increase(item.variantId);
 
-                          if (!increased && context.mounted) {
-                            ScaffoldMessenger.of(context)
-                              ..hideCurrentSnackBar()
-                              ..showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'No more stock available for this item.',
+                            if (!increased && context.mounted) {
+                              ScaffoldMessenger.of(context)
+                                ..hideCurrentSnackBar()
+                                ..showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'No more stock available for this item.',
+                                    ),
                                   ),
-                                ),
-                              );
-                          }
-                        },
-                        onRemove: () => vm.remove(item.variantId),
-                      );
-                    },
-                  ),
-          ),
-
-          const Divider(height: 28),
-
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Subtotal', style: theme.textTheme.bodyMedium),
-                    const SizedBox(height: 3),
-                    Text(
-                      formatUsd(vm.totalCents),
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                                );
+                            }
+                          },
+                          onRemove: () => vm.remove(item.variantId),
+                        );
+                      },
                     ),
-                  ],
-                ),
-              ),
-              if (!vm.isEmpty)
-                OutlinedButton.icon(
-                  onPressed: vm.clear,
-                  icon: const Icon(Icons.delete_outline),
-                  label: const Text('Clear'),
-                ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: vm.isEmpty ? null : () => context.goNamed('checkout'),
-              icon: const Icon(Icons.payment),
-              label: const Text('Proceed to Checkout'),
             ),
-          ),
-        ],
+
+            const Divider(height: 28),
+
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Subtotal', style: theme.textTheme.bodyMedium),
+                      const SizedBox(height: 3),
+                      Text(
+                        formatUsd(vm.totalCents),
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (!vm.isEmpty)
+                  OutlinedButton.icon(
+                    onPressed: vm.clear,
+                    icon: const Icon(Icons.delete_outline),
+                    label: const Text('Clear'),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: vm.isEmpty
+                    ? null
+                    : () => context.goNamed('checkout'),
+                icon: const Icon(Icons.payment),
+                label: const Text('Proceed to Checkout'),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

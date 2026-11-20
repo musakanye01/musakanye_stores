@@ -44,19 +44,32 @@ class _TabletScaffoldState extends State<TabletScaffold> {
       route: '/shift',
     ),
   ];
-
   int _selectedIndex(String location) {
-    if (location.startsWith('/sales') ||
-        location.startsWith('/checkout') ||
-        location.startsWith('/cart') ||
-        location.startsWith('/receipt')) {
-      // Receipt routes belong to the sales workflow.
-      return location.startsWith('/receipt') ? 2 : 1;
+    // Check Sale History before Sale because both paths start with /sales.
+    if (location == '/sales-history' ||
+        location.startsWith('/sales-history/')) {
+      return 2;
     }
 
-    if (location.startsWith('/shift') ||
-        location.startsWith('/start-shift') ||
-        location.startsWith('/cash-movements')) {
+    if (location == '/receipt' || location.startsWith('/receipt/')) {
+      return 2;
+    }
+
+    if (location == '/sales' ||
+        location.startsWith('/sales/') ||
+        location == '/checkout' ||
+        location.startsWith('/checkout/') ||
+        location == '/cart' ||
+        location.startsWith('/cart/')) {
+      return 1;
+    }
+
+    if (location == '/shift' ||
+        location.startsWith('/shift/') ||
+        location == '/start-shift' ||
+        location.startsWith('/start-shift/') ||
+        location == '/cash-movements' ||
+        location.startsWith('/cash-movements/')) {
       return 3;
     }
 
