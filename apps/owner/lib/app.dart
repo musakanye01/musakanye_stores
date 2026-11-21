@@ -5,6 +5,7 @@ import 'package:owner/ui/dashboard/dashboard_view_model.dart';
 import 'package:owner/ui/operations/owner_operations_view_model.dart';
 import 'package:owner/ui/stock/inventory_view_model.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_core/theme/app_theme.dart';
 import 'package:shared_core/ui/auth_view_model.dart';
 
 import 'routing/app_router.dart';
@@ -58,10 +59,7 @@ class _AppViewState extends State<_AppView> {
     return MaterialApp.router(
       title: 'Owner',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2457C5)),
-      ),
+      theme: AppTheme.light,
       routerConfig: _router,
     );
   }

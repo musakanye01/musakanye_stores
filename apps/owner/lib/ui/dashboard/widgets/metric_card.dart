@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:owner/ui/dashboard/widgets/dashboard_colors.dart';
 
 class MetricCard extends StatelessWidget {
   const MetricCard({
@@ -11,6 +10,8 @@ class MetricCard extends StatelessWidget {
     required this.iconColor,
     required this.backgroundColor,
     this.onTap,
+    this.trailingIcon,
+    this.trailingIconColor,
   });
 
   final String title;
@@ -20,47 +21,69 @@ class MetricCard extends StatelessWidget {
   final Color iconColor;
   final Color backgroundColor;
   final VoidCallback? onTap;
+  final IconData? trailingIcon;
+  final Color? trailingIconColor;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Card(
       child: InkWell(
         onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.all(15),
+          padding: const EdgeInsets.all(14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(9),
-                decoration: BoxDecoration(
-                  color: backgroundColor,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: iconColor, size: 21),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: backgroundColor,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(icon, color: iconColor, size: 19),
+                  ),
+                  const Spacer(),
+                  if (trailingIcon != null)
+                    Icon(
+                      trailingIcon,
+                      color: trailingIconColor ?? theme.colorScheme.primary,
+                      size: 21,
+                    ),
+                ],
               ),
-              const SizedBox(height: 16),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 27,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 3),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+              const Spacer(),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  value,
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.4,
+                  ),
                 ),
               ),
               const SizedBox(height: 4),
               Text(
+                title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
                 subtitle,
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: DashboardColors.muted,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
             ],

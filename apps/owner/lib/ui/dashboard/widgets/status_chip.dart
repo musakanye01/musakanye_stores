@@ -28,12 +28,21 @@ class StatusChip extends StatelessWidget {
 }
 
 /// Convenience for the low-stock "N left" chip.
+
 class LowStockChip extends StatelessWidget {
   const LowStockChip({super.key, required this.quantity});
 
   final int quantity;
 
   @override
-  Widget build(BuildContext context) =>
-      StatusChip(label: '$quantity left', color: DashboardColors.warning);
+  Widget build(BuildContext context) {
+    final isOutOfStock = quantity <= 0;
+
+    return StatusChip(
+      label: isOutOfStock ? 'Out of stock' : '$quantity left',
+      color: isOutOfStock
+          ? Theme.of(context).colorScheme.error
+          : DashboardColors.warning,
+    );
+  }
 }

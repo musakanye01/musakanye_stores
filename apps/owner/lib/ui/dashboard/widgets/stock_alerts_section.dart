@@ -26,15 +26,19 @@ class StockAlertsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            const Expanded(
+            Expanded(
               child: Text(
                 'Stock alerts',
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
             TextButton(
@@ -43,13 +47,39 @@ class StockAlertsSection extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [for (final item in items) _StockRow(item: item)],
-            ),
+            child: items.isEmpty
+                ? Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.check_circle_outline_rounded,
+                          color: theme.colorScheme.primary,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'All good. No products are running low.',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : Column(
+                    children: [
+                      for (var i = 0; i < items.length; i++) ...[
+                        _StockRow(item: items[i]),
+                        if (i != items.length - 1) const SizedBox(height: 4),
+                      ],
+                    ],
+                  ),
           ),
         ),
       ],
@@ -64,6 +94,12 @@ class _StockRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isOutOfStock = item.stock <= 0;
+    final alertColor = isOutOfStock
+        ? Theme.of(context).colorScheme.error
+        : DashboardColors.warning;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
@@ -72,12 +108,14 @@ class _StockRow extends StatelessWidget {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: DashboardColors.surfaceTint,
+              color: alertColor.withValues(alpha: 0.10),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(
-              Icons.inventory_2_outlined,
-              color: DashboardColors.muted,
+            child: Icon(
+              isOutOfStock
+                  ? Icons.remove_shopping_cart_outlined
+                  : Icons.inventory_2_outlined,
+              color: alertColor,
             ),
           ),
           const SizedBox(width: 12),
@@ -87,22 +125,23 @@ class _StockRow extends StatelessWidget {
               children: [
                 Text(
                   item.name,
-                  style: const TextStyle(
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w600,
-                    fontSize: 14,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   item.category,
-                  style: const TextStyle(
-                    color: DashboardColors.muted,
-                    fontSize: 12,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
             ),
           ),
+          const SizedBox(width: 8),
           LowStockChip(quantity: item.stock),
         ],
       ),

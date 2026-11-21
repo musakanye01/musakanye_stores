@@ -5,10 +5,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class DashboardService {
   DashboardService(this._client);
+
   final SupabaseClient _client;
 
   Future<Result<DashboardSummary>> fetchSummary({
     required DateTime dayStart,
+    required DateTime weekStart,
+    required DateTime sevenDayStart,
     required int lowStockThreshold,
     required int lowStockLimit,
   }) async {
@@ -17,10 +20,13 @@ class DashboardService {
         'dashboard_summary',
         params: {
           'day_start': dayStart.toUtc().toIso8601String(),
+          'week_start': weekStart.toUtc().toIso8601String(),
+          'seven_day_start': sevenDayStart.toUtc().toIso8601String(),
           'low_stock_threshold': lowStockThreshold,
           'low_stock_limit': lowStockLimit,
         },
       );
+
       return Result.ok(
         DashboardSummary.fromJson(response as Map<String, dynamic>),
       );
