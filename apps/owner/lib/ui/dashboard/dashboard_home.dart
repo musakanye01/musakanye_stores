@@ -69,11 +69,7 @@ class _Content extends StatelessWidget {
 
     final lowStock = [
       for (final item in summary.lowStockItems)
-        LowStockItem(
-          name: item.displayName,
-          category: item.categoryName ?? 'Uncategorised',
-          stock: item.stockOnHand,
-        ),
+        LowStockItem(name: item.displayName, stock: item.stockOnHand),
     ];
 
     final metrics = [
@@ -118,89 +114,80 @@ class _Content extends StatelessWidget {
       ),
     ];
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final wide = constraints.maxWidth >= 900;
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+      children: [
+        Text(
+          'Here is how your store is doing today.',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        if (refreshFailed) ...[
+          const SizedBox(height: 8),
+          Text(
+            "Couldn't refresh. Showing the last loaded data.",
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.error,
+            ),
+          ),
+        ],
+        const SizedBox(height: 22),
 
-        return ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+        _SalesTodayCard(
+          amount: _formatCents(summary.todayCents),
+          transactions: summary.todayTransactionCount,
+          onTap: onOpenSales,
+        ),
+        const SizedBox(height: 16),
+
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final columns = constraints.maxWidth < 360
+                ? 1
+                : (constraints.maxWidth / 250).floor().clamp(2, 4);
+
+            return GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: metrics.length,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: columns,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                mainAxisExtent: 174,
+              ),
+              itemBuilder: (context, index) => metrics[index],
+            );
+          },
+        ),
+
+        const SizedBox(height: 24),
+
+        SalesTrendChart(points: summary.salesTrend),
+        const SizedBox(height: 16),
+
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Here is how your store is doing today.',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+            Expanded(
+              child: FastMoversSection(
+                products: summary.fastMovingProducts,
+                onTap: onOpenSales,
               ),
             ),
-            if (refreshFailed) ...[
-              const SizedBox(height: 8),
-              Text(
-                "Couldn't refresh. Showing the last loaded data.",
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.error,
-                ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: StockAlertsSection(
+                items: lowStock,
+                totalCount: summary.lowStockCount,
+                onViewInventory: onOpenStock,
               ),
-            ],
-            const SizedBox(height: 22),
-
-            _SalesTodayCard(
-              amount: _formatCents(summary.todayCents),
-              transactions: summary.todayTransactionCount,
-              onTap: onOpenSales,
             ),
-            const SizedBox(height: 16),
-
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final columns = constraints.maxWidth < 360
-                    ? 1
-                    : (constraints.maxWidth / 250).floor().clamp(2, 4);
-
-                return GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: metrics.length,
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: columns,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    mainAxisExtent: 174,
-                  ),
-                  itemBuilder: (context, index) => metrics[index],
-                );
-              },
-            ),
-
-            const SizedBox(height: 24),
-
-            if (wide)
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    flex: 3,
-                    child: SalesTrendChart(points: summary.salesTrend),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    flex: 2,
-                    child: FastMoversSection(
-                      products: summary.fastMovingProducts,
-                    ),
-                  ),
-                ],
-              )
-            else ...[
-              SalesTrendChart(points: summary.salesTrend),
-              const SizedBox(height: 16),
-              FastMoversSection(products: summary.fastMovingProducts),
-            ],
-            const SizedBox(height: 24),
-
-            StockAlertsSection(items: lowStock, onViewInventory: onOpenStock),
           ],
-        );
-      },
+        ),
+      ],
     );
   }
 }
