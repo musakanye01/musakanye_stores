@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:owner/data/repo/inventory_repo.dart';
+import 'package:owner/ui/stock/model/inventory_sort_option.dart';
 import 'package:owner/ui/stock/model/inventory_stock_filter.dart';
 import 'package:shared_core/domain/model/catalogue_item.dart';
 import 'package:shared_core/util/result.dart';
@@ -20,6 +21,11 @@ class InventoryViewModel extends ChangeNotifier {
   String? _errorMessage;
   String? _categoryErrorMessage;
   bool _isUpdatingProduct = false;
+  String? _selectedCategoryId;
+  InventorySortOption _sortOption = InventorySortOption.nameAscending;
+
+  String? get selectedCategoryId => _selectedCategoryId;
+  InventorySortOption get sortOption => _sortOption;
 
   List<CatalogueItem> get inventory => List.unmodifiable(_inventory);
 
@@ -89,15 +95,52 @@ class InventoryViewModel extends ChangeNotifier {
         InventoryStockFilter.outOfStock => item.stockOnHand == 0,
       };
 
-      return matchesSearch && matchesStock;
+      final matchesCategory =
+          _selectedCategoryId == null || item.categoryId == _selectedCategoryId;
+
+      return matchesSearch && matchesStock && matchesCategory;
     }).toList();
 
-    items.sort(
-      (a, b) =>
+    items.sort((a, b) {
+      return switch (_sortOption) {
+        InventorySortOption.nameAscending =>
           a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()),
-    );
+        InventorySortOption.nameDescending =>
+          b.displayName.toLowerCase().compareTo(a.displayName.toLowerCase()),
+        InventorySortOption.stockLowToHigh => a.stockOnHand.compareTo(
+          b.stockOnHand,
+        ),
+        InventorySortOption.stockHighToLow => b.stockOnHand.compareTo(
+          a.stockOnHand,
+        ),
+        InventorySortOption.priceLowToHigh => a.priceCents.compareTo(
+          b.priceCents,
+        ),
+        InventorySortOption.priceHighToLow => b.priceCents.compareTo(
+          a.priceCents,
+        ),
+      };
+    });
 
     return items;
+  }
+
+  void applyFilters({
+    required InventoryStockFilter stockFilter,
+    required String? categoryId,
+    required InventorySortOption sortOption,
+  }) {
+    _stockFilter = stockFilter;
+    _selectedCategoryId = categoryId;
+    _sortOption = sortOption;
+    notifyListeners();
+  }
+
+  void resetFilters() {
+    _stockFilter = InventoryStockFilter.all;
+    _selectedCategoryId = null;
+    _sortOption = InventorySortOption.nameAscending;
+    notifyListeners();
   }
 
   Future<void> loadInventory() async {

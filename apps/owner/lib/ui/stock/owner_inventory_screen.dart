@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:owner/ui/stock/inventory_view_model.dart';
 import 'package:owner/ui/stock/model/inventory_stock_filter.dart';
 import 'package:owner/ui/stock/widgets/inventory_empty_state.dart';
+import 'package:owner/ui/stock/widgets/inventory_filter_sheet.dart';
 import 'package:owner/ui/stock/widgets/inventory_search_field.dart';
 import 'package:owner/ui/stock/widgets/inventory_summary_row.dart';
 import 'package:owner/ui/stock/widgets/product_card.dart';
@@ -283,33 +284,15 @@ class _OwnerInventoryScreenState extends State<OwnerInventoryScreen> {
   }
 
   void _showFilters(InventoryViewModel vm) {
-    // The composable filter sheet is the next implementation step.
-    // Keep the control functional while that sheet is being introduced.
     showModalBottomSheet<void>(
       context: context,
-      showDragHandle: true,
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Filters', style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 12),
-              const Text('More filter options will be added here.'),
-              const SizedBox(height: 12),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Close'),
-                ),
-              ),
-            ],
-          ),
-        ),
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
+      builder: (_) => InventoryFilterSheet(viewModel: vm),
     );
   }
 
