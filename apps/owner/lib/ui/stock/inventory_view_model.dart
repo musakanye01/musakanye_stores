@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:owner/data/repo/inventory_repo.dart';
+import 'package:owner/ui/stock/model/inventory_stock_filter.dart';
 import 'package:shared_core/domain/model/catalogue_item.dart';
 import 'package:shared_core/util/result.dart';
 
@@ -14,7 +15,7 @@ class InventoryViewModel extends ChangeNotifier {
   bool _isLoading = false;
   bool _isLoadingCategories = false;
   bool _isCreatingProduct = false;
-  bool _lowStockOnly = false;
+
   String _searchQuery = '';
   String? _errorMessage;
   String? _categoryErrorMessage;
@@ -27,7 +28,7 @@ class InventoryViewModel extends ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isLoadingCategories => _isLoadingCategories;
   bool get isCreatingProduct => _isCreatingProduct;
-  bool get lowStockOnly => _lowStockOnly;
+
   bool get isUpdatingProduct => _isUpdatingProduct;
 
   String get searchQuery => _searchQuery;
@@ -38,30 +39,20 @@ class InventoryViewModel extends ChangeNotifier {
   /// It is an application-wide rule, not a per-product database field.
   static const int lowStockThreshold = 5;
 
-  List<CatalogueItem> get filteredInventory {
-    final query = _searchQuery.trim().toLowerCase();
+  InventoryStockFilter _stockFilter = InventoryStockFilter.all;
 
-    final items = _inventory.where((item) {
-      final matchesSearch =
-          query.isEmpty ||
-          item.productName.toLowerCase().contains(query) ||
-          (item.categoryName ?? '').toLowerCase().contains(query) ||
-          (item.sku ?? '').toLowerCase().contains(query) ||
-          (item.size ?? '').toLowerCase().contains(query) ||
-          (item.colour ?? '').toLowerCase().contains(query);
+  InventoryStockFilter get stockFilter => _stockFilter;
 
-      final matchesStock =
-          !_lowStockOnly || item.stockOnHand <= lowStockThreshold;
+  int get inStockCount =>
+      _inventory.where((item) => item.stockOnHand > 0).length;
 
-      return matchesSearch && matchesStock;
-    }).toList();
+  int get outOfStockCount =>
+      _inventory.where((item) => item.stockOnHand == 0).length;
 
-    items.sort(
-      (a, b) =>
-          a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()),
-    );
-
-    return items;
+  void setStockFilter(InventoryStockFilter filter) {
+    if (_stockFilter == filter) return;
+    _stockFilter = filter;
+    notifyListeners();
   }
 
   int get productCount => _inventory.length;
@@ -79,16 +70,34 @@ class InventoryViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void toggleLowStockFilter() {
-    _lowStockOnly = !_lowStockOnly;
-    notifyListeners();
-  }
+  List<CatalogueItem> get filteredInventory {
+    final query = _searchQuery.trim().toLowerCase();
 
-  void setLowStockFilter(bool enabled) {
-    if (_lowStockOnly == enabled) return;
+    final items = _inventory.where((item) {
+      final matchesSearch =
+          query.isEmpty ||
+          item.productName.toLowerCase().contains(query) ||
+          (item.categoryName ?? '').toLowerCase().contains(query) ||
+          (item.sku ?? '').toLowerCase().contains(query) ||
+          (item.size ?? '').toLowerCase().contains(query) ||
+          (item.colour ?? '').toLowerCase().contains(query);
 
-    _lowStockOnly = enabled;
-    notifyListeners();
+      final matchesStock = switch (_stockFilter) {
+        InventoryStockFilter.all => true,
+        InventoryStockFilter.lowStock =>
+          item.stockOnHand > 0 && item.stockOnHand <= lowStockThreshold,
+        InventoryStockFilter.outOfStock => item.stockOnHand == 0,
+      };
+
+      return matchesSearch && matchesStock;
+    }).toList();
+
+    items.sort(
+      (a, b) =>
+          a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()),
+    );
+
+    return items;
   }
 
   Future<void> loadInventory() async {
