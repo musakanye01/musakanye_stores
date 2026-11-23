@@ -20,7 +20,6 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
   late final TextEditingController _nameController;
   late final TextEditingController _priceController;
   late final TextEditingController _stockController;
-  late final TextEditingController _thresholdController;
 
   String? _categoryId;
   bool _categoryChanged = false;
@@ -40,7 +39,6 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
     _stockController = TextEditingController(
       text: product?.stockOnHand.toString() ?? '0',
     );
-    _thresholdController = TextEditingController(text: '5');
 
     _categoryId = product?.categoryId;
   }
@@ -50,7 +48,6 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
     _nameController.dispose();
     _priceController.dispose();
     _stockController.dispose();
-    _thresholdController.dispose();
     super.dispose();
   }
 
@@ -236,34 +233,19 @@ class _ProductFormSheetState extends State<ProductFormSheet> {
                   validator: _validatePrice,
                 ),
                 const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _stockController,
-                        readOnly: _isEditing,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'Stock quantity',
-                        ),
-                        validator: (value) =>
-                            _validateWholeNumber(value, 'quantity'),
-                      ),
+                if (!_isEditing) ...[
+                  TextFormField(
+                    controller: _stockController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Initial stock quantity',
+                      prefixIcon: Icon(Icons.inventory_2_outlined),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _thresholdController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'Low-stock alert at',
-                        ),
-                        validator: (value) =>
-                            _validateWholeNumber(value, 'threshold'),
-                      ),
-                    ),
-                  ],
-                ),
+                    validator: (value) =>
+                        _validateWholeNumber(value, 'quantity'),
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
