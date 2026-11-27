@@ -92,7 +92,7 @@ class _InventoryFilterSheetState extends State<InventoryFilterSheet> {
               _sectionTitle(context, 'Category'),
               const SizedBox(height: 10),
               DropdownButtonFormField<String?>(
-                value: _categoryId,
+                initialValue: _categoryId,
                 isExpanded: true,
                 decoration: InputDecoration(
                   filled: true,

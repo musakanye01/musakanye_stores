@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:owner/ui/operations/owner_operations_view_model.dart';
+import 'package:owner/ui/operations/sales_calculations.dart';
+import 'package:owner/ui/operations/sales_period.dart';
 import 'package:owner/ui/operations/widgets/activity_filter.dart';
 import 'package:owner/ui/operations/widgets/activity_filter_chips.dart';
-import 'package:owner/ui/operations/widgets/operations_colors.dart';
-import 'package:owner/ui/operations/widgets/operations_empty_state.dart';
-import 'package:owner/ui/operations/widgets/sale_tile.dart';
-import 'package:owner/ui/operations/widgets/shift_banner.dart';
-import 'package:owner/ui/operations/widgets/shift_tile.dart';
+import 'package:owner/ui/operations/widgets/sales_list_section.dart';
+import 'package:owner/ui/operations/widgets/sales_metrics_row.dart';
+import 'package:owner/ui/operations/widgets/sales_period_selector.dart';
+import 'package:owner/ui/operations/widgets/sales_search_field.dart';
+import 'package:owner/ui/operations/widgets/sales_trend_card.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_core/domain/model/sale_history.dart';
-import 'package:shared_core/domain/model/shift.dart';
+import 'package:shared_core/theme/app_colors.dart';
 import 'package:shared_core/util/result.dart';
 
 class OwnerOperationsScreen extends StatefulWidget {
@@ -20,170 +21,114 @@ class OwnerOperationsScreen extends StatefulWidget {
 }
 
 class _OwnerOperationsScreenState extends State<OwnerOperationsScreen> {
+  final TextEditingController _searchController = TextEditingController();
+
+  SalesPeriod _period = SalesPeriod.today;
   ActivityFilter _filter = ActivityFilter.allSales;
+  String _searchQuery = '';
 
-  List<SaleHistory> _visibleSales(List<SaleHistory> allSales) {
-    final sales = allSales.where(_filter.matchesSale).toList()
-      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-
-    return sales;
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
-  List<Shift> _sortedShifts(List<Shift> allShifts) {
-    return [...allShifts]..sort((a, b) => b.openedAt.compareTo(a.openedAt));
+  void _clearSearch() {
+    _searchController.clear();
+    setState(() => _searchQuery = '');
   }
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = context.watch<OwnerOperationsViewModel>();
+    final viewModel = context.read<OwnerOperationsViewModel>();
 
     return ListenableBuilder(
-      listenable: Listenable.merge([viewModel.loadSales, viewModel.loadShifts]),
+      listenable: viewModel.loadSales,
       builder: (context, _) {
-        final sales = _filter.showsSales
-            ? _visibleSales(viewModel.sales)
-            : const <SaleHistory>[];
+        // One timestamp, so the list and chart agree on what "today" is.
+        final now = DateTime.now();
 
-        final shifts = _filter.showsSales
-            ? const <Shift>[]
-            : _sortedShifts(viewModel.shifts);
+        final periodSales = salesForPeriod(viewModel.sales, _period, now);
+        final completed = completedSales(periodSales);
+        final visible = visibleSales(periodSales, _filter, _searchQuery);
 
-        final isEmpty = sales.isEmpty && shifts.isEmpty;
-
-        final salesFailed = viewModel.loadSales.result is Error<void>;
-        final shiftsFailed = viewModel.loadShifts.result is Error<void>;
-
-        final salesError = salesFailed
-            ? (viewModel.loadSales.result as Error<void>).error
+        final result = viewModel.loadSales.result;
+        final errorMessage = result is Error<void>
+            ? result.error.toString()
             : null;
-
-        final shiftsError = shiftsFailed
-            ? (viewModel.loadShifts.result as Error<void>).error
-            : null;
-
-        final isLoadingSelectedData = _filter.showsSales
-            ? viewModel.loadSales.running
-            : viewModel.loadShifts.running;
-
-        final selectedDataFailed = _filter.showsSales
-            ? salesFailed
-            : shiftsFailed;
-
-        final selectedDataError = _filter.showsSales ? salesError : shiftsError;
-
-        final hasLoadedSelectedData = _filter.showsSales
-            ? viewModel.loadSales.completed
-            : viewModel.loadShifts.completed;
 
         return Scaffold(
-          backgroundColor: OperationsColors.background,
-          body: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
-            children: [
-              ShiftBanner(openShift: viewModel.openShift),
-              const SizedBox(height: 26),
-              const Text(
-                'Recent activity',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          backgroundColor: AppColors.background,
+          body: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1160),
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+                children: [
+                  Text(
+                    'Revenue and transaction activity',
+                    style: Theme.of(context).textTheme.bodyMedium
+                        ?.copyWith(color: AppColors.muted),
+                  ),
+                  const SizedBox(height: 16),
+                  SalesPeriodSelector(
+                    selected: _period,
+                    onChanged: (period) => setState(() => _period = period),
+                  ),
+                  const SizedBox(height: 16),
+                  SalesMetricsRow(
+                    totalCents: totalSalesCents(completed),
+                    transactionCount: completed.length,
+                  ),
+                  const SizedBox(height: 18),
+                  SalesTrendCard(
+                    label: _period.trendLabel,
+                    points: buildTrendPoints(completed, _period, now),
+                  ),
+                  const SizedBox(height: 26),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Recent sales',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                      ),
+                      Text(
+                        visible.length == 1
+                            ? '1 transaction'
+                            : '${visible.length} transactions',
+                        style: Theme.of(context).textTheme.bodySmall
+                            ?.copyWith(color: AppColors.muted),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  SalesSearchField(
+                    controller: _searchController,
+                    query: _searchQuery,
+                    onChanged: (value) => setState(() => _searchQuery = value),
+                    onClear: _clearSearch,
+                  ),
+                  const SizedBox(height: 12),
+                  ActivityFilterChips(
+                    selected: _filter,
+                    onSelected: (filter) => setState(() => _filter = filter),
+                  ),
+                  const SizedBox(height: 14),
+                  SalesListSection(
+                    sales: visible,
+                    hasCachedSales: viewModel.sales.isNotEmpty,
+                    isLoading: viewModel.loadSales.running,
+                    errorMessage: errorMessage,
+                    onRetry: () => viewModel.loadSales.execute(),
+                  ),
+                ],
               ),
-              const SizedBox(height: 14),
-              ActivityFilterChips(
-                selected: _filter,
-                onSelected: (filter) {
-                  setState(() => _filter = filter);
-                },
-              ),
-              const SizedBox(height: 14),
-
-              if (isLoadingSelectedData && !hasLoadedSelectedData && isEmpty)
-                const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(24),
-                    child: CircularProgressIndicator(),
-                  ),
-                )
-              else if (selectedDataFailed && isEmpty)
-                _OperationsErrorState(
-                  message: selectedDataError.toString(),
-                  onRetry: () {
-                    if (_filter.showsSales) {
-                      viewModel.loadSales.execute();
-                    } else {
-                      viewModel.loadShifts.execute();
-                    }
-                  },
-                )
-              else if (isEmpty)
-                const OperationsEmptyState()
-              else ...[
-                if (selectedDataFailed)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: _OperationsErrorState(
-                      message: selectedDataError.toString(),
-                      onRetry: () {
-                        if (_filter.showsSales) {
-                          viewModel.loadSales.execute();
-                        } else {
-                          viewModel.loadShifts.execute();
-                        }
-                      },
-                    ),
-                  ),
-                if (isLoadingSelectedData) const LinearProgressIndicator(),
-                for (final sale in sales)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: SaleTile(sale: sale),
-                  ),
-                for (final shift in shifts)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: ShiftTile(shift: shift),
-                  ),
-              ],
-            ],
+            ),
           ),
         );
       },
-    );
-  }
-}
-
-class _OperationsErrorState extends StatelessWidget {
-  const _OperationsErrorState({required this.message, required this.onRetry});
-
-  final String message;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            const Icon(
-              Icons.cloud_off_outlined,
-              size: 36,
-              color: OperationsColors.muted,
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              'Could not load activity',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: OperationsColors.muted),
-            ),
-            const SizedBox(height: 12),
-            TextButton(onPressed: onRetry, child: const Text('Retry')),
-          ],
-        ),
-      ),
     );
   }
 }
